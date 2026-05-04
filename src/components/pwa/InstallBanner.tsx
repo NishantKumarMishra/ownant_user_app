@@ -6,20 +6,19 @@ export default function InstallBanner() {
 
   const [show, setShow] = useState(false);
 
-  useEffect(() => {
-    if (!isInstallable) return;
+ useEffect(() => {
+  if (!isInstallable) return;
 
-    // ❌ don't show if user already dismissed
-    const dismissed = localStorage.getItem("pwa-dismissed");
-    if (dismissed) return;
+  const dismissed = localStorage.getItem("pwa-dismissed");
+  if (dismissed) return;
 
-    // ⏳ delay UX (important for SaaS feel)
-    const timer = setTimeout(() => {
-      setShow(true);
-    }, 5000);
+  // show immediately after slight idle delay
+  const timer = setTimeout(() => {
+    setShow(true);
+  }, 800);
 
-    return () => clearTimeout(timer);
-  }, [isInstallable]);
+  return () => clearTimeout(timer);
+}, [isInstallable]);
 
   const handleInstall = async () => {
     await installApp();

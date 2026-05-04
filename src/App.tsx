@@ -23,11 +23,13 @@ import { AnalyticsPage } from '@/pages/analytics/AnalyticsPage'
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
 import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { BillingPage } from '@/pages/profile/BillingPage'
+import IosInstallBanner from "@/components/pwa/IosInstallBanner";
 
 export default function App() {
   return (
     <BrowserRouter>
       {/* 🌟 GLOBAL PWA INSTALL UX */}
+      <IosInstallBanner />
       <InstallBanner />
 
       <Routes>
