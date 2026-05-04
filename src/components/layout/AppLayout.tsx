@@ -2,7 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { TopBar } from '@/components/layout/TopBar'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { SidebarNav } from '@/components/layout/SidebarNav'
-import { InstallBanner } from '@/components/pwa/InstallBanner'
+import InstallBanner from '@/components/pwa/InstallBanner'
 import { useAuthStore } from '@/store/authStore'
 
 export function AppLayout() {
