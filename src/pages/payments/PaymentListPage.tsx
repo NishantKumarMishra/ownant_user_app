@@ -25,26 +25,49 @@ import { CreditCard } from 'lucide-react'
 
 export function PaymentListPage() {
   const [params, setParams] = useSearchParams()
+
   const initialFilter = (params.get('filter')?.toUpperCase() as PaymentFilter) || 'ALL'
+
   const [month, setMonth] = useState(() => format(new Date(), 'yyyy-MM'))
+
   const [filter, setFilter] = useState<PaymentFilter>(
-    ['ALL', 'PENDING', 'PAID', 'OVERDUE'].includes(initialFilter) ? initialFilter : 'ALL',
+    ['ALL', 'PENDING', 'PAID', 'OVERDUE'].includes(initialFilter)
+      ? initialFilter
+      : 'ALL',
   )
+
   const [bulkOpen, setBulkOpen] = useState(false)
   const [sheet, setSheet] = useState<PaymentItem | null>(null)
+
   const [amountPaid, setAmountPaid] = useState(0)
   const [paymentMode, setPaymentMode] = useState('CASH')
   const [referenceNumber, setReferenceNumber] = useState('')
-  const [paidAt, setPaidAt] = useState(() => new Date().toISOString().slice(0, 10))
+  const [paidAt, setPaidAt] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  )
 
   const stats = usePaymentStats(month)
   const list = usePaymentsList(filter, month)
+
   const markPaid = useMarkPaid()
   const waive = useWaivePayment()
   const bulk = useGenerateBulkPayments()
   const qc = useQueryClient()
 
-  const rows = list.data ?? []
+  // ✅ PRIORITY SORTING
+  const rows: PaymentItem[] = (list.data?.content ?? []).sort((a, b) => {
+    const priority: Record<string, number> = {
+      OVERDUE: 0,
+      PENDING: 1,
+      PAID: 2,
+    }
+    return (priority[a.status] ?? 99) - (priority[b.status] ?? 99)
+  })
+
+  const listKey = useMemo(
+    () => ['payments', 'list', filter, month] as const,
+    [filter, month],
+  )
 
   const openPaid = (p: PaymentItem) => {
     setSheet(p)
@@ -54,16 +77,24 @@ export function PaymentListPage() {
     setReferenceNumber('')
   }
 
-  const listKey = useMemo(() => ['payments', 'list', filter, month] as const, [filter, month])
-
   const onMarkPaid = async () => {
     if (!sheet) return
+
     const prev = qc.getQueryData<PaymentItem[]>(listKey)
+
     qc.setQueryData<PaymentItem[]>(listKey, (old) =>
       (old ?? []).map((x) =>
-        x.id === sheet.id ? { ...x, status: 'PAID', amountPaid, paidAt: `${paidAt}T00:00:00` } : x,
+        x.id === sheet.id
+          ? {
+              ...x,
+              status: 'PAID',
+              amountPaid,
+              paidAt: `${paidAt}T00:00:00`,
+            }
+          : x,
       ),
     )
+
     try {
       await markPaid.mutateAsync({
         id: sheet.id,
@@ -74,6 +105,7 @@ export function PaymentListPage() {
           : undefined,
         paidAt,
       })
+
       toast.success('Saved')
       setSheet(null)
     } catch (e) {
@@ -90,72 +122,102 @@ export function PaymentListPage() {
       handleApiError(e)
     }
   }
+  const pendingCount = rows.filter((p) => p.status === 'PENDING').length
+const overdueCount = rows.filter((p) => p.status === 'OVERDUE').length
 
   return (
     <div className="space-y-4 pb-8">
+
+      {/* Month Switch */}
       <div className="flex items-center justify-between gap-2">
         <button
-          type="button"
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
-          onClick={() => setMonth((m) => format(addMonths(new Date(`${m}-01`), -1), 'yyyy-MM'))}
+          className="rounded-lg border px-3 py-2 text-sm font-semibold"
+          onClick={() =>
+            setMonth((m) =>
+              format(addMonths(new Date(`${m}-01`), -1), 'yyyy-MM'),
+            )
+          }
         >
           ‹
         </button>
+
         <p className="text-sm font-semibold">{formatMonthYear(month)}</p>
+
         <button
-          type="button"
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
-          onClick={() => setMonth((m) => format(addMonths(new Date(`${m}-01`), 1), 'yyyy-MM'))}
+          className="rounded-lg border px-3 py-2 text-sm font-semibold"
+          onClick={() =>
+            setMonth((m) =>
+              format(addMonths(new Date(`${m}-01`), 1), 'yyyy-MM'),
+            )
+          }
         >
           ›
         </button>
       </div>
 
+      {/* Stats */}
       {stats.isLoading ? (
         <Skeleton className="h-24 w-full" />
       ) : stats.data ? (
-        <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-surface p-3 text-sm md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 rounded-xl border p-3 text-sm md:grid-cols-4">
           <div>
-            <p className="text-textTertiary">Expected</p>
+            <p>Expected</p>
             <p className="font-semibold">{formatCurrency(stats.data.expected)}</p>
           </div>
           <div>
-            <p className="text-textTertiary">Collected</p>
+            <p>Collected</p>
             <p className="font-semibold">{formatCurrency(stats.data.collected)}</p>
           </div>
           <div>
-            <p className="text-textTertiary">Collection rate</p>
+            <p>Rate</p>
             <p className="font-semibold">{Math.round(stats.data.collectionRate)}%</p>
           </div>
           <div>
-            <p className="text-textTertiary">Overdue</p>
-            <p className="font-semibold text-danger">{stats.data.overdueCount}</p>
+            <p>Overdue</p>
+            <p className="font-semibold text-red-500">{stats.data.overdueCount}</p>
           </div>
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
-        {(['ALL', 'PENDING', 'PAID', 'OVERDUE'] as const).map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => {
-              setFilter(f)
-              setParams(f === 'OVERDUE' ? { filter: 'overdue' } : {})
-            }}
-            className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-              filter === f ? 'border-primary bg-primaryLight text-primary' : 'border-border bg-surface'
-            }`}
-          >
-            {f === 'ALL' ? 'All' : f === 'PENDING' ? 'Pending' : f === 'PAID' ? 'Paid' : 'Overdue'}
-          </button>
-        ))}
-      </div>
+      {/* Filters */}
+     <div className="flex gap-2">
+  {(['ALL', 'PENDING', 'PAID', 'OVERDUE'] as const).map((f) => {
+    const count =
+      f === 'PENDING'
+        ? pendingCount
+        : f === 'OVERDUE'
+        ? overdueCount
+        : null
 
-      <Button type="button" variant="secondary" className="w-full" onClick={() => setBulkOpen(true)}>
+    return (
+      <button
+        key={f}
+        onClick={() => {
+          setFilter(f)
+          setParams(f === 'OVERDUE' ? { filter: 'overdue' } : {})
+        }}
+        className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${
+          filter === f ? 'bg-blue-100 text-blue-600' : ''
+        }`}
+      >
+        {f}
+
+        {/* ✅ Show count only for pending & overdue */}
+        {count !== null && count > 0 && (
+          <span className="rounded-full bg-red-500 px-1.5 text-[10px] text-white">
+            {count}
+          </span>
+        )}
+      </button>
+    )
+  })}
+</div>
+
+      <Button className="w-full" onClick={() => setBulkOpen(true)}>
         Generate bulk payments
       </Button>
 
+      {/* List */}
       {list.isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -166,35 +228,68 @@ export function PaymentListPage() {
         <EmptyState
           icon={CreditCard}
           title="No payments"
-          description="Generate payments for this month to see them here."
+          description="Generate payments to start tracking."
         />
       ) : (
-        <div className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <div className="divide-y border rounded-xl">
           {rows.map((p) => (
-            <div key={p.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div key={p.id} className="flex justify-between items-center p-4">
+
               <div>
-                <Link to={`/payments/${p.id}`} className="font-semibold text-textPrimary hover:underline">
+                <Link
+                  to={`/payments/${p.id}`}
+                  className="font-semibold hover:underline"
+                >
                   {p.tenantName}
                 </Link>
-                <p className="text-xs text-textSecondary">
-                  {p.monthYear} · Due {p.dueDate ? format(new Date(p.dueDate), 'd MMM') : '—'}
+
+                <p className="text-xs text-gray-500">
+                  {p.monthYear} · Due{' '}
+                  {p.dueDate ? format(new Date(p.dueDate), 'd MMM') : '—'}
                 </p>
-                <p className="text-sm font-semibold">{formatCurrency(p.amountDue)}</p>
-                <Badge variant={p.status === 'PAID' ? 'success' : 'warning'}>{p.status}</Badge>
+
+                <p className="font-semibold">
+                  {formatCurrency(p.amountDue)}
+                </p>
+
+                <Badge
+  variant={
+    p.status === 'PAID'
+      ? 'success'
+      : p.status === 'OVERDUE'
+      ? 'danger'   // ✅ FIXED
+      : 'warning'
+  }
+>
+  {p.status}
+</Badge>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" type="button" variant="secondary" onClick={() => openPaid(p)}>
-                  Mark Paid
-                </Button>
-                <Button size="sm" type="button" variant="outline" onClick={() => void onWaive(p)}>
-                  Waive
-                </Button>
-              </div>
+
+              {/* ✅ CONDITIONAL ACTIONS */}
+              {p.status === 'OVERDUE' || p.status === 'PENDING' ? (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => openPaid(p)}>
+                    Mark Paid
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void onWaive(p)}
+                  >
+                    Waive
+                  </Button>
+                </div>
+              ) : (
+                <span className="text-xs font-semibold text-green-600">
+                  Completed
+                </span>
+              )}
             </div>
           ))}
         </div>
       )}
 
+      {/* Bulk Modal */}
       <Modal
         open={bulkOpen}
         onOpenChange={setBulkOpen}
@@ -202,13 +297,8 @@ export function PaymentListPage() {
         description="Create rent entries for all active tenants for the selected month."
       >
         <div className="flex gap-2">
-          <Button variant="secondary" className="flex-1" type="button" onClick={() => setBulkOpen(false)}>
-            Cancel
-          </Button>
+          <Button onClick={() => setBulkOpen(false)}>Cancel</Button>
           <Button
-            className="flex-1"
-            type="button"
-            disabled={bulk.isPending}
             onClick={async () => {
               try {
                 await bulk.mutateAsync(month)
@@ -224,42 +314,45 @@ export function PaymentListPage() {
         </div>
       </Modal>
 
-      <BottomSheet open={Boolean(sheet)} onOpenChange={(o) => !o && setSheet(null)} title="Mark paid">
-        {sheet ? (
+      {/* Bottom Sheet */}
+      <BottomSheet
+        open={Boolean(sheet)}
+        onOpenChange={(o) => !o && setSheet(null)}
+        title="Mark paid"
+      >
+        {sheet && (
           <div className="space-y-3">
             <Input
-              label="Amount paid"
               type="number"
               value={amountPaid}
               onChange={(e) => setAmountPaid(Number(e.target.value))}
             />
-            <div>
-              <label className="text-sm font-medium">Payment mode</label>
-              <select
-                className="mt-1 h-11 w-full rounded-lg border border-border px-3 text-sm"
-                value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-              >
-                {['CASH', 'UPI', 'BANK_TRANSFER', 'CHEQUE'].map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {['UPI', 'BANK_TRANSFER', 'CHEQUE'].includes(paymentMode) ? (
-              <Input
-                label="Reference number"
-                value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
-              />
-            ) : null}
-            <Input type="date" label="Paid date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
-            <Button type="button" className="w-full" disabled={markPaid.isPending} onClick={() => void onMarkPaid()}>
+
+            <select
+              value={paymentMode}
+              onChange={(e) => setPaymentMode(e.target.value)}
+            >
+              {['CASH', 'UPI', 'BANK_TRANSFER', 'CHEQUE'].map((m) => (
+                <option key={m}>{m}</option>
+              ))}
+            </select>
+
+            <Input
+              value={referenceNumber}
+              onChange={(e) => setReferenceNumber(e.target.value)}
+            />
+
+            <Input
+              type="date"
+              value={paidAt}
+              onChange={(e) => setPaidAt(e.target.value)}
+            />
+
+            <Button onClick={() => void onMarkPaid()}>
               Save
             </Button>
           </div>
-        ) : null}
+        )}
       </BottomSheet>
     </div>
   )

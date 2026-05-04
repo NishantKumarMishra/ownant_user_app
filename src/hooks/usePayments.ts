@@ -3,6 +3,7 @@ import api from '@/api/axios'
 import { ENDPOINTS } from '@/api/endpoints'
 import type { ApiResponse, PaymentItem, PaymentStats } from '@/api/types'
 import { handleApiError } from '@/lib/apiError'
+import type { PaginatedResponse } from '@/api/types'
 
 export type PaymentFilter = 'ALL' | 'PENDING' | 'PAID' | 'OVERDUE'
 
@@ -19,6 +20,35 @@ export function usePaymentStats(monthYear: string, enabled = true) {
   })
 }
 
+// export function usePaymentsList(
+//   filter: PaymentFilter,
+//   monthYear: string,
+//   enabled = true,
+// ) {
+//   return useQuery({
+//     queryKey: ['payments', 'list', filter, monthYear],
+//     queryFn: async () => {
+//       if (filter === 'OVERDUE') {
+//         const res = await api.get<ApiResponse<PaymentItem[]>>(ENDPOINTS.OVERDUE_PAYMENTS, {
+//           params: { monthYear },
+//         })
+//         return res.data.data
+//       }
+//       if (filter === 'PENDING') {
+//         const res = await api.get<ApiResponse<PaymentItem[]>>(ENDPOINTS.PENDING_PAYMENTS, {
+//           params: { monthYear },
+//         })
+//         return res.data.data
+//       }
+//       const res = await api.get<ApiResponse<PaymentItem[]>>(ENDPOINTS.PAYMENTS, {
+//         params: { monthYear, status: filter === 'ALL' ? undefined : filter },
+//       })
+//       return res.data.data
+//     },
+//     enabled,
+//   })
+// }
+
 export function usePaymentsList(
   filter: PaymentFilter,
   monthYear: string,
@@ -27,21 +57,23 @@ export function usePaymentsList(
   return useQuery({
     queryKey: ['payments', 'list', filter, monthYear],
     queryFn: async () => {
-      if (filter === 'OVERDUE') {
-        const res = await api.get<ApiResponse<PaymentItem[]>>(ENDPOINTS.OVERDUE_PAYMENTS, {
-          params: { monthYear },
-        })
-        return res.data.data
-      }
-      if (filter === 'PENDING') {
-        const res = await api.get<ApiResponse<PaymentItem[]>>(ENDPOINTS.PENDING_PAYMENTS, {
-          params: { monthYear },
-        })
-        return res.data.data
-      }
-      const res = await api.get<ApiResponse<PaymentItem[]>>(ENDPOINTS.PAYMENTS, {
-        params: { monthYear, status: filter === 'ALL' ? undefined : filter },
-      })
+      const endpoint =
+        filter === 'OVERDUE'
+          ? ENDPOINTS.OVERDUE_PAYMENTS
+          : filter === 'PENDING'
+          ? ENDPOINTS.PENDING_PAYMENTS
+          : ENDPOINTS.PAYMENTS
+
+      const res = await api.get<ApiResponse<PaginatedResponse<PaymentItem>>>(
+        endpoint,
+        {
+          params: {
+            monthYear,
+            status: filter === 'ALL' ? undefined : filter,
+          },
+        },
+      )
+
       return res.data.data
     },
     enabled,
