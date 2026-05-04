@@ -43,7 +43,11 @@ export function ProfilePage() {
     if (!isLoading && owner) {
      
 
-      if ((sub.maxBeds!=-1 || sub.maxPgs!=-1) && (sub.currentBeds > sub.maxBeds || sub.currentPgs > sub.maxPgs)) {
+      if (
+  sub &&
+  (sub.maxBeds !== -1 || sub.maxPgs !== -1) &&
+  (sub.currentBeds > sub.maxBeds || sub.currentPgs > sub.maxPgs)
+) { 
         navigate('/billing')
       }
     }

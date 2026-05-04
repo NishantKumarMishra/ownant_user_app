@@ -4,7 +4,7 @@ export interface ApiResponse<T> {
   data: T
   errorCode: string | null
   timestamp: string
-  name: string
+  
 }
 
 export interface Owner {
