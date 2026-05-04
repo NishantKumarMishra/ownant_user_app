@@ -2,6 +2,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { CatchAll } from '@/routes/CatchAll'
 import { AppLayout } from '@/components/layout/AppLayout'
+
+import InstallBanner from '@/components/pwa/InstallBanner' // 👈 ADD THIS
+
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { OtpPage } from '@/pages/auth/OtpPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
@@ -24,6 +27,9 @@ import { BillingPage } from '@/pages/profile/BillingPage'
 export default function App() {
   return (
     <BrowserRouter>
+      {/* 🌟 GLOBAL PWA INSTALL UX */}
+      <InstallBanner />
+
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/otp" element={<OtpPage />} />
@@ -37,6 +43,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/onboarding/rooms"
           element={

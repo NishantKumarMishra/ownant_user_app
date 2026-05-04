@@ -1,28 +1,36 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
 
-export function usePWAInstall() {
-  const [promptEvent, setPromptEvent] = useState<any>(null)
+export const usePWAInstall = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
     const handler = (e: any) => {
-      e.preventDefault()
-      setPromptEvent(e)
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+    };
+  }, []);
+
+  const installApp = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+
+    const choice = await deferredPrompt.userChoice;
+
+    if (choice.outcome === "accepted") {
+      setIsInstallable(false);
     }
 
-    window.addEventListener('beforeinstallprompt', handler)
+    setDeferredPrompt(null);
+  };
 
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
-
-  const install = async () => {
-    if (!promptEvent) return
-    promptEvent.prompt()
-    await promptEvent.userChoice
-    setPromptEvent(null)
-  }
-
-  return {
-    install,
-    canInstall: !!promptEvent,
-  }
-}
+  return { isInstallable, installApp };
+};
