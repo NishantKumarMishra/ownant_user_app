@@ -1,0 +1,45 @@
+import { NavLink } from 'react-router-dom'
+import { CreditCard, Home, LayoutGrid, UserRound, Users } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+const items = [
+  { to: '/dashboard', label: 'Home', icon: Home },
+  { to: '/rooms', label: 'Rooms', icon: LayoutGrid },
+  { to: '/tenants', label: 'Tenants', icon: Users },
+  { to: '/payments', label: 'Payments', icon: CreditCard },
+  { to: '/profile', label: 'Profile', icon: UserRound },
+] as const
+
+export function BottomNav() {
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface lg:hidden">
+      <ul className="mx-auto flex max-w-lg justify-between px-2 pb-safe pt-1">
+        {items.map(({ to, label, icon: Icon }) => (
+          <li key={to} className="flex-1">
+            <NavLink
+              to={to}
+              className={({ isActive }) =>
+                cn(
+                  'flex flex-col items-center gap-0.5 py-2 text-xs font-medium',
+                  isActive ? 'text-primary' : 'text-textTertiary',
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <span className="relative">
+                    <Icon className="h-5 w-5" />
+                    {isActive ? (
+                      <span className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
+                    ) : null}
+                  </span>
+                  {label}
+                </>
+              )}
+            </NavLink>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
