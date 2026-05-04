@@ -60,11 +60,11 @@ export function LoginPage() {
   <div className="mb-5 flex items-center justify-center">
     <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-black shadow-lg overflow-hidden border border-white/10">
       
-      <img
-        src="public/image/ownant-app-icon.png"
-        alt="Ownant App Icon"
-        className="h-full w-full object-cover"
-      />
+     <img
+  src="/image/ownant-app-icon.png"
+  alt="Ownant App Icon"
+  className="h-full w-full object-cover"
+/>
 
     </div>
   </div>
