@@ -4,7 +4,6 @@ export interface ApiResponse<T> {
   data: T
   errorCode: string | null
   timestamp: string
-  
 }
 
 export interface Owner {
@@ -13,7 +12,6 @@ export interface Owner {
   phone: string
   email?: string | null
   activePgId: string | null
-  
 }
 
 export interface CreatePgResponse {
@@ -22,15 +20,21 @@ export interface CreatePgResponse {
 }
 
 export interface SubscriptionInfo {
-  currentBeds: number
-  maxBeds: number
-  currentPgs: number
-  maxPgs: number
-  bedUsagePct: number
-  pgUsagePct: number
-  plan: string
-  status: string
-  renewsAt: string
+  currentBeds:           number
+  maxBeds:               number
+  currentPgs:            number
+  maxPgs:                number
+  bedUsagePct:           number
+  pgUsagePct:            number
+  plan:                  string
+  status:                string
+  renewsAt:              string
+
+  // ── Hybrid addon fields (added for addon beds support) ────────
+  addonBeds:             number   // extra beds purchased on top of base plan
+  effectiveBedLimit:     number   // maxBeds + addonBeds (-1 = unlimited)
+  addonBedsMonthlyPrice: number   // addonBeds × ₹99
+  amountMonthly:         number   // base plan monthly price
 }
 
 export interface OwnerProfile extends Owner {
@@ -73,7 +77,7 @@ export interface Room {
   isAc: boolean
   rentPerBed: number
   totalBeds?: number
-vacantBeds?: number
+  vacantBeds?: number
   beds?: Bed[]
   notes?: string | null
 }
@@ -97,23 +101,6 @@ export interface TenantListItem {
   monthlyRent?: number
 }
 
-// export interface TenantDetail extends TenantListItem {
-//   email?: string | null
-//   occupation?: string | null
-//   company?: string | null
-//   moveInDate?: string
-//   dueDay?: number
-//   emergencyName?: string | null
-//   emergencyPhone?: string | null
-//   idProofType?: string | null
-//   idProofNumber?: string | null
-//   notes?: string | null
-//   roomId?: string
-//   bedId?: string
-//   sharingType?: number
-//   isAc?: boolean
-// }
-
 export interface TenantDetail extends TenantListItem {
   email?: string | null
   occupation?: string | null
@@ -121,17 +108,12 @@ export interface TenantDetail extends TenantListItem {
   moveInDate?: string
   moveOutDate?: string
   dueDay?: number
-
   emergencyName?: string | null
   emergencyPhone?: string | null
-
   idProofType?: string | null
   idProofNumber?: string | null
-
   notes?: string | null
-
   monthlyRent?: number
-
   bed?: {
     bedId: string
     bedLabel: string
@@ -162,26 +144,8 @@ export interface PaymentStats {
   overdueCount: number
 }
 
-/*
-OLD DashboardData (flat structure)
-
 export interface DashboardData {
   greetingName?: string
-  collectionRate: number
-  bedsOccupied: number
-  totalBeds: number
-  vacantBeds: number
-  activeTenants: number
-  overdueCount: number
-  trend?: { month: string; expected: number; collected: number }[]
-  collectionTrendLabel?: string
-}
-*/
-
-export interface DashboardData {
-  greetingName?: string
-
-  // NEW: backend now sends nested occupancy object
   occupancy: {
     totalRooms: number
     totalBeds: number
@@ -191,8 +155,6 @@ export interface DashboardData {
     acRooms: number
     nonAcRooms: number
   }
-
-  // NEW: backend now sends nested collection object
   collection: {
     monthYear: string
     totalExpected: number
@@ -205,16 +167,12 @@ export interface DashboardData {
     pendingCount: number
     overdueCount: number
   }
-
-  // NEW: backend now sends nested tenants object
   tenants: {
     activeTenants: number
     noticeTenants: number
     newThisMonth: number
     vacatedThisMonth: number
   }
-
-  // NEW: backend sends sixMonthTrend instead of trend
   sixMonthTrend?: {
     monthYear: string
     expected: number
@@ -222,7 +180,6 @@ export interface DashboardData {
     collectionRate?: number
     occupiedBeds?: number
   }[]
-
   collectionTrendLabel?: string
 }
 
@@ -236,12 +193,7 @@ export interface AnalyticsOccupancy {
 }
 
 export interface AnalyticsTrendPoint {
-  // OLD
-  // month: string
-
-  // NEW → backend sends monthYear
   monthYear: string
-
   expected: number
   collected: number
   collectionRate?: number
@@ -249,13 +201,7 @@ export interface AnalyticsTrendPoint {
 
 export interface PayerRow {
   tenantId: string
-
-  // OLD
-  // name: string
-
-  // NEW
   tenantName: string
-
   score?: number
   pendingCount?: number
 }
@@ -263,13 +209,6 @@ export interface PayerRow {
 export interface RoomBreakdownRow {
   sharingType: number
   isAc: boolean
-
-  // OLD
-  // numberOfRooms: number
-  // bedCount: number
-  // occupancyPercent: number
-
-  // NEW
   roomCount: number
   totalBeds: number
   occupiedBeds: number
@@ -278,45 +217,94 @@ export interface RoomBreakdownRow {
 }
 
 export interface RevenueProjection {
-  // OLD
-  // thisMonthExpected: number
-  // nextMonthProjected: number
-
-  // NEW
   currentMonthExpected: number
   lastMonthCollected: number
   projectedNextMonth: number
   growthRate: number
 }
+
+// ── Billing types ─────────────────────────────────────────────
+
+// What useBillingPlans() maps backend → UI format
 export interface BillingPlan {
-  code: string
-  name: string
+  code:         string   // "FREE" | "BASIC" | "PRO" | "BUSINESS"
+  name:         string   // "Basic — ₹499/month"
   priceMonthly: number
-  
-  popular?: boolean
-      features?: string[]
- }
+  maxBeds:      number   // -1 = unlimited
+  maxPgs:       number   // -1 = unlimited
+  popular?:     boolean
+  features?:    string[]
+}
 
-// export interface BillingPlan {
-//   plan: 'STARTER' | 'PRO' | 'ENTERPRISE'
-//   displayName: string
-//   monthlyPrice: number
-//   maxPgs: number
-//   maxBeds: number
-//   razorpayPlanId: string
-//   isCurrentPlan: boolean
+// Raw backend shape from GET /billing/plans
+export interface BackendPlanInfo {
+  plan:             string
+  displayName:      string
+  monthlyPrice:     number
+  maxPgs:           number
+  maxBeds:          number
+  razorpayPlanId:   string | null
+  isCurrentPlan:    boolean
+  addonBedPrice:    number   // ₹99
+  currentAddonBeds: number
+}
 
-//   // ✅ ADD THIS
-//   features?: string[]
-// }
+// Full subscription returned by GET /billing/subscription
+export interface FullSubscription {
+  id:                    string
+  plan:                  string
+  status:                'ACTIVE' | 'EXPIRED' | 'CANCELLED'
+  maxPgs:                number
+  maxBeds:               number
+  addonBeds:             number
+  effectiveBedLimit:     number   // maxBeds + addonBeds
+  currentPgs:            number
+  currentBeds:           number
+  pgUsagePct:            number
+  bedUsagePct:           number
+  amountMonthly:         number
+  addonBedsMonthlyPrice: number
+  razorpaySubId:         string | null
+  startsAt:              string
+  renewsAt:              string
+  cancelledAt:           string | null
+  isActive:              boolean
+}
 
+// Addon purchase record from GET /billing/addons
+export interface AddonPurchase {
+  id:           string
+  addonType:    string
+  quantity:     number
+  pricePerUnit: number
+  totalPrice:   number
+  status:       'ACTIVE' | 'CANCELLED'
+  purchasedAt:  string
+  expiresAt:    string | null
+}
+
+// Returned by POST /billing/checkout
 export interface CheckoutSession {
-  razorpayKeyId: string
+  razorpayKeyId:  string
   subscriptionId: string
-  planName: string
-  ownerName?: string
-  ownerPhone?: string
-  ownerEmail?: string
+  planName:       string
+  amountPaise:    number
+  currency:       string
+  ownerName:      string
+  ownerPhone:     string
+  ownerEmail?:    string | null
+}
+
+// Returned by POST /billing/addons/checkout
+export interface AddonCheckoutSession {
+  razorpayKeyId: string
+  orderId:       string   // Razorpay Order ID — NOT subscriptionId
+  addonType:     string
+  quantity:      number
+  totalAmount:   number
+  currency:      string
+  ownerName:     string
+  ownerPhone:    string
 }
 
 export interface NotificationLog {
@@ -341,7 +329,6 @@ export interface RoomAnalyticsData {
   bySharingType: RoomBreakdownRow[]
 }
 
-//pagination response
 export interface PaginatedResponse<T> {
   content: T[]
   page: number

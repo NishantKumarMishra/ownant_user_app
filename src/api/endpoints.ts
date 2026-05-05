@@ -35,8 +35,6 @@ export const ENDPOINTS = {
   PAYMENT_STATS: '/payments/stats',
   PAYMENT_TREND: '/payments/trend',
 
-  
-
   DASHBOARD: '/analytics/dashboard',
   ANALYTICS_OCCUPANCY: '/analytics/occupancy',
   ANALYTICS_COLLECTION: '/analytics/collection',
@@ -49,9 +47,15 @@ export const ENDPOINTS = {
   SEND_REMINDER: '/notifications/send-reminder',
   TENANT_NOTIF_LOGS: (id: string) => `/notifications/tenant/${id}`,
 
-  PLANS: '/billing/plans',
-  SUBSCRIPTION: '/billing/subscription',
-  CHECKOUT: '/billing/checkout',
-  VERIFY_PAYMENT: '/billing/verify-payment',
+  // ── Billing — base plans ──────────────────────────────────────
+  PLANS:               '/billing/plans',
+  SUBSCRIPTION:        '/billing/subscription',
+  CHECKOUT:            '/billing/checkout',
+  VERIFY_PAYMENT:      '/billing/verify-payment',
   CANCEL_SUBSCRIPTION: '/billing/cancel',
+
+  // ── Billing — addon beds ──────────────────────────────────────
+  ADDON_CHECKOUT:      '/billing/addons/checkout',
+  ADDON_VERIFY:        '/billing/addons/verify',
+  ADDONS:              '/billing/addons',
 } as const
