@@ -17,7 +17,7 @@ import {
 import { useOwnerProfile } from '@/hooks/useAuth'
 import { formatCurrency } from '@/lib/format'
 import { handleApiError } from '@/lib/apiError'
-import type { BillingPlan, FullSubscription, AddonPurchase } from '@/api/types'
+import type {  FullSubscription, AddonPurchase } from '@/api/types'
 import toast from 'react-hot-toast'
 
 const PLAN_ORDER = ['FREE', 'BASIC', 'PRO', 'BUSINESS']
@@ -75,7 +75,7 @@ export function BillingPage() {
         prefill: {
           name:    session.ownerName,
           contact: session.ownerPhone,
-          email:   session.ownerEmail,
+          email:   session.ownerEmail?.toString() ?? undefined,
         },
         theme:  { color: '#0F6E56' },
         modal:  { ondismiss: () => setProcessingPlan(null) },

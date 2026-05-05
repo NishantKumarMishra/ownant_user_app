@@ -9,7 +9,7 @@ import type {
   AddonPurchase,
   CheckoutSession,
   AddonCheckoutSession,
-  OwnerProfile,
+  
 } from '@/api/types'
 import { handleApiError } from '@/lib/apiError'
 
