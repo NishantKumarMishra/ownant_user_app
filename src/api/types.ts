@@ -126,15 +126,20 @@ export interface TenantDetail extends TenantListItem {
 }
 
 export interface PaymentItem {
-  id: string
-  tenantId: string
-  tenantName: string
-  monthYear: string
-  dueDate?: string
-  amountDue: number
-  amountPaid?: number
-  status: string
-  paidAt?: string | null
+  id:           string
+  tenantId:     string
+  tenantName:   string
+  tenantPhone?: string | null   // shown on detail page — tap to call
+  roomNumber?:  string | null   // Room 203
+  bedLabel?:    string | null   // Bed A
+  monthYear:    string
+  dueDate?:     string
+  amountDue:    number
+  amountPaid?:  number
+  status:       string
+  paidAt?:      string | null
+  paymentMode?: string | null   // CASH | UPI | BANK_TRANSFER | CHEQUE
+  referenceNo?: string | null   // UPI ref, cheque number etc.
 }
 
 export interface PaymentStats {

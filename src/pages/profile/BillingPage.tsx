@@ -40,8 +40,8 @@ export function BillingPage() {
   const [processingPlan,   setProcessingPlan   ] = useState<string | null>(null)
 
   const currentPlan  = owner.data?.subscription?.plan ?? sub?.plan ?? 'FREE'
-  const isOnPaidPlan = currentPlan !== 'FREE'
-  const canBuyAddons = isOnPaidPlan && currentPlan !== 'BUSINESS'
+ // const isOnPaidPlan = currentPlan !== 'FREE'
+  const canBuyAddons = currentPlan !== 'BUSINESS'
   const addonTotal   = addonQty * 99
 
   // ── Base plan upgrade (your original pattern kept exactly) ────
@@ -402,7 +402,7 @@ export function BillingPage() {
       </div>
 
       {/* ── Cancel section ──────────────────────────────────── */}
-      {isOnPaidPlan && sub?.isActive && (
+      {sub?.isActive && sub?.plan !== 'FREE' &&  (
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
