@@ -52,9 +52,12 @@ function getStatusIcon(p: PaymentItem) {
 }
 
 function getDueDateLabel(p: PaymentItem): string {
+  if (p.status === 'PAID') {
+    const paid = p.paidDate ?? p.paidAt
+    return paid ? `Paid on ${format(parseISO(paid), 'd MMM')}` : 'Paid'
+  }
   if (!p.dueDate) return ''
   const days = differenceInDays(parseISO(p.dueDate), new Date())
-  if (p.status === 'PAID') return `Paid on ${format(parseISO(p.dueDate), 'd MMM')}`
   if (days < 0)   return `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} overdue`
   if (days === 0) return 'Due today'
   if (days === 1) return 'Due tomorrow'
@@ -85,13 +88,32 @@ export function PaymentListPage() {
   const [paidAt, setPaidAt] = useState(() => format(new Date(), 'yyyy-MM-dd'))
 
   const stats    = usePaymentStats(month)
-  console.log('Stats raw:', stats.data, 'Error:', stats.error, 'Month:', month)
-  const list     = usePaymentsList(filter, month)
+
+  // Always fetch ALL payments for selected month — filter client-side
+  // This ensures PENDING/OVERDUE tabs respect the selected month
+  const listAll  = usePaymentsList('ALL', month)
   const markPaid = useMarkPaid()
   const waive    = useWaivePayment()
   const bulk     = useGenerateBulkPayments()
 
-  const rows: PaymentItem[] = [...(list.data ?? [])].sort((a, b) => {
+  // Client-side filter based on selected tab
+  const allRows: PaymentItem[] = listAll.data ?? []
+
+  const filteredRows = allRows.filter(p => {
+    if (filter === 'ALL')     return true
+    if (filter === 'PAID')    return p.status === 'PAID' || p.status === 'WAIVED'
+    if (filter === 'PENDING') return p.status === 'PENDING' || p.status === 'PARTIAL'
+    if (filter === 'OVERDUE') {
+      if (p.status === 'PAID' || p.status === 'WAIVED') return false
+      if (!p.dueDate) return false
+      return differenceInDays(parseISO(p.dueDate), new Date()) < 0
+    }
+    return true
+  })
+
+  const list = { ...listAll, data: filteredRows }
+
+  const rows: PaymentItem[] = [...filteredRows].sort((a, b) => {
     const order = (p: PaymentItem) => {
       const label = getStatusLabel(p)
       if (label === 'Overdue')  return 0

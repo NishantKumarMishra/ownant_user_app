@@ -112,12 +112,13 @@ export function AddTenantPage() {
             disabled={Boolean(presetBed)}
             onChange={(e) => setValue('bedId', e.target.value)}
           >
-            <option value="">Select a vacant bed</option>
+         <option value="">Select a vacant bed</option>
             {[...bedOptions.entries()].map(([room, list]) => (
-              <optgroup key={room} label={`Room ${room}`}>
-                {list.map((b) => (
+              <optgroup key={room} label={`Room ${room} · ${list[0].sharingType}-sharing · ${list[0].isAc ? 'AC' : 'Non-AC'}`}>
+                {list.slice(0, 1).map((b) => (
                   <option key={b.bedId} value={b.bedId}>
-                    Bed {b.bedLabel} ({b.sharingType}-sharing, ₹{b.rentPerBed}/bed)
+                    Bed {b.bedLabel} · {b.sharingType}-sharing · {b.isAc ? 'AC' : 'Non-AC'} · ₹{b.rentPerBed}/bed
+                    
                   </option>
                 ))}
               </optgroup>

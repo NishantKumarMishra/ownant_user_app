@@ -91,14 +91,40 @@ export interface VacantBedOption {
   isAc: boolean
 }
 
+export interface TenantBedInfo {
+  bedId:       string
+  bedLabel:    string
+  roomId:      string
+  roomNumber:  string
+  floor?:      string | null
+  sharingType: number
+  isAc:        boolean
+}
+
+export interface TenantCurrentPayment {
+  monthYear:  string
+  status:     string        // PENDING | PAID | PARTIAL | WAIVED
+  amountDue:  number
+  amountPaid: number
+  dueDate?:   string | null
+  paidDate?:  string | null
+}
+
 export interface TenantListItem {
-  id: string
-  name: string
-  phone: string
-  status: string
-  roomNumber?: string
-  bedLabel?: string
+  id:          string
+  name:        string
+  phone:       string
+  status:      string
   monthlyRent?: number
+  dueDay?:     number
+  moveInDate?: string
+  // Flat fields (some APIs return these directly)
+  roomNumber?: string | null
+  bedLabel?:   string | null
+  // Nested bed object from TenantSummary — has roomNumber + bedLabel
+  bed?:        TenantBedInfo | null
+  // Current month payment — for Paid/Due Soon/Overdue badge
+  currentMonthPayment?: TenantCurrentPayment | null
 }
 
 export interface TenantDetail extends TenantListItem {
@@ -138,6 +164,7 @@ export interface PaymentItem {
   amountPaid?:  number
   status:       string
   paidAt?:      string | null
+  paidDate?: string | null 
   paymentMode?: string | null   // CASH | UPI | BANK_TRANSFER | CHEQUE
   referenceNo?: string | null   // UPI ref, cheque number etc.
 }
@@ -312,11 +339,39 @@ export interface AddonCheckoutSession {
   ownerPhone:    string
 }
 
+// Replace existing NotificationLog
 export interface NotificationLog {
-  id: string
-  sentAt: string
-  channel?: string
-  status?: string
+  id:           string
+  tenantId?:    string | null
+  tenantName?:  string | null
+  type:         'RENT_REMINDER' | 'RENT_DUE' | 'PAYMENT_CONFIRM' | 'CUSTOM' | string
+  channel?:     string
+  recipient?:   string
+  messageBody?: string | null
+  status:       'SENT' | 'FAILED' | 'PENDING' | string
+  sentAt:       string
+  errorDetail?: string | null
+}
+
+// Add these new types
+export type ActivityType =
+  | 'PAYMENT_RECEIVED'
+  | 'PAYMENT_PARTIAL'
+  | 'PAYMENT_WAIVED'
+  | 'REMINDER_SENT'
+  | 'BULK_REMINDER_SENT'
+  | 'TENANT_ADDED'
+  | 'TENANT_VACATED'
+  | 'CUSTOM'
+
+export interface ActivityFeedItem {
+  id:        string
+  type:      ActivityType
+  title:     string
+  subtitle:  string
+  timestamp: string
+  dotColor:  'green' | 'amber' | 'red' | 'blue' | 'gray'
+  href?:     string
 }
 
 export interface RoomTypeBulkRow {

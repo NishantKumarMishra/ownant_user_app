@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useState } from 'react'
 import { useCreatePg } from '@/hooks/usePgs'
+import { CitySearch } from '@/components/location/CitySearch'
 import toast from 'react-hot-toast'
-import { useAuthStore } from '@/store/authStore' // ✅ ADD THIS
+import { useAuthStore } from '@/store/authStore'
 
 const schema = z.object({
   name:    z.string().min(2, 'PG name must be at least 2 characters'),
@@ -21,12 +23,14 @@ type FormValues = z.infer<typeof schema>
 export function OnboardingPgPage() {
   const navigate   = useNavigate()
   const createPg   = useCreatePg()
-
-  // ✅ Zustand store actions
   const setAccessToken = useAuthStore((s) => s.setAccessToken)
   const setActivePgId  = useAuthStore((s) => s.setActivePgId)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  // Store city coordinates from autocomplete
+  const [cityLat, setCityLat] = useState<number | undefined>()
+  const [cityLng, setCityLng] = useState<number | undefined>()
+
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
 
@@ -38,6 +42,8 @@ export function OnboardingPgPage() {
         city:    values.city,
         pincode: values.pincode || undefined,
         phone:   values.phone   || undefined,
+        latitude:  cityLat,
+        longitude: cityLng,
       })
 
       console.log('PG created:', result)
@@ -116,17 +122,17 @@ export function OnboardingPgPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-textPrimary mb-1">
-                City <span className="text-danger">*</span>
-              </label>
-              <input
-                {...register('city')}
-                placeholder="Chennai"
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              <CitySearch
+                label="City"
+                placeholder="Type city name..."
+                value={watch('city') ?? ''}
+                onChange={(city, lat, lng) => {
+                  setValue('city', city, { shouldValidate: true })
+                  setCityLat(lat)
+                  setCityLng(lng)
+                }}
+                error={errors.city?.message}
               />
-              {errors.city && (
-                <p className="mt-1 text-xs text-danger">{errors.city.message}</p>
-              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-textPrimary mb-1">
@@ -174,9 +180,3 @@ export function OnboardingPgPage() {
     </div>
   )
 }
-
-
-
-
-
-

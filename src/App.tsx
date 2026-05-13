@@ -23,6 +23,8 @@ import { AnalyticsPage } from '@/pages/analytics/AnalyticsPage'
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
 import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { BillingPage } from '@/pages/profile/BillingPage'
+import { ListingSetupPage } from '@/pages/ListingSetupPage/ListingSetupPage'
+import { PaymentSettingsPage } from '@/pages/PaymentSettings/PaymentSettingsPage'
 
 export default function App() {
   return (
@@ -50,6 +52,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
+          <Route path="/listing/setup" element={<ListingSetupPage />} />
           <Route path="/"                element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard"       element={<DashboardPage />} />
           <Route path="/rooms"           element={<RoomListPage />} />
@@ -65,6 +68,7 @@ export default function App() {
           <Route path="/notifications"   element={<NotificationsPage />} />
           <Route path="/profile"         element={<ProfilePage />} />
           <Route path="/billing"         element={<BillingPage />} />
+          <Route path="/payment-settings" element={<PaymentSettingsPage />} />
         </Route>
 
         <Route path="*" element={<CatchAll />} />

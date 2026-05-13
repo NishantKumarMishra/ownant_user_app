@@ -17,6 +17,23 @@ export function useTenantNotificationLogs(tenantId: string | undefined) {
   })
 }
 
+// ── NEW: All notification logs for active PG ──────────────────
+// Used by the unified activity feed on the dashboard.
+// Requires the new GET /api/v1/notifications/pg endpoint.
+export function usePgNotificationLogs(size = 20, enabled = true) {
+  return useQuery({
+    queryKey: ['notifications', 'pg', size],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<NotificationLog[]>>(
+        ENDPOINTS.PG_NOTIF_LOGS,
+        { params: { size } },
+      )
+      return res.data.data ?? []
+    },
+    enabled,
+  })
+}
+
 export function useTriggerReminders() {
   return useMutation({
     mutationFn: async () => {

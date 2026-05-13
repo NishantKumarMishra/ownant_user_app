@@ -25,7 +25,13 @@ export function useCreatePg() {
   const setActivePgId  = useAuthStore((s) => s.setActivePgId)
 
   return useMutation({
-    mutationFn: async (payload: Partial<Pg> & { name: string; address: string; city: string }) => {
+    mutationFn: async (payload: Partial<Pg> & {
+  name:       string
+  address:    string
+  city:       string
+  latitude?:  number
+  longitude?: number
+}) => {
       const res = await api.post<ApiResponse<CreatePgResponse>>(ENDPOINTS.PGS, payload)
       return res.data.data
     },

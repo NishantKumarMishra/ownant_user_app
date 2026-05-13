@@ -34,6 +34,9 @@ export const ENDPOINTS = {
   TENANT_PAYMENTS: (id: string) => `/payments/tenant/${id}`,
   PAYMENT_STATS: '/payments/stats',
   PAYMENT_TREND: '/payments/trend',
+  PAYMENT_SETTINGS:        '/payment-settings',
+PAYMENT_SETTINGS_UPI:    '/payment-settings/upi',
+PAYMENT_SETTINGS_PREVIEW: '/payment-settings/upi/preview',
 
   DASHBOARD: '/analytics/dashboard',
   ANALYTICS_OCCUPANCY: '/analytics/occupancy',
@@ -42,6 +45,7 @@ export const ENDPOINTS = {
   ANALYTICS_PAYERS: '/analytics/payers',
   ANALYTICS_ROOMS: '/analytics/rooms',
   ANALYTICS_PROJECTION: '/analytics/projection',
+  PG_NOTIF_LOGS: '/notifications/pg',
 
   TRIGGER_REMINDERS: '/notifications/trigger-reminders',
   SEND_REMINDER: '/notifications/send-reminder',
