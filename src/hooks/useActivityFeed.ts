@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { formatDistanceToNow, parseISO, isThisMonth } from 'date-fns'
-import { format } from 'date-fns'
-import type { ActivityFeedItem, ActivityType, NotificationLog, PaymentItem, TenantListItem } from '@/api/types'
+import type { ActivityFeedItem, NotificationLog, PaymentItem, TenantListItem } from '@/api/types'
 
 // ── Tenant → ActivityFeedItem ─────────────────────────────────
 // Shows tenants whose moveInDate is this month

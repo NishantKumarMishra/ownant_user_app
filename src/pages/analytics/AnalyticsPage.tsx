@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { addMonths, format } from 'date-fns'
 import {
-  BarChart, Bar, LineChart, Line, ComposedChart,
+   Bar,  Line, ComposedChart,
   CartesianGrid, Tooltip, XAxis, YAxis,
   ResponsiveContainer, Cell, PieChart, Pie,
 } from 'recharts'
@@ -11,12 +11,12 @@ import {
   useRoomAnalytics, useProjection,
 } from '@/hooks/useAnalytics'
 import { usePaymentStats } from '@/hooks/usePayments'
-import { formatCurrency, formatMonthYear } from '@/lib/format'
+import {  formatMonthYear } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown,
-  BedDouble, IndianRupee, Users, AlertTriangle,
-  CheckCircle2, Clock, Zap, Wind, Thermometer,
+  BedDouble,  AlertTriangle,
+  CheckCircle2, Clock, Wind, Thermometer,
   ArrowUpRight, ArrowDownRight, Minus,
 } from 'lucide-react'
 

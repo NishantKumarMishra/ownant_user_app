@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, QrCode, CheckCircle2, AlertCircle, Trash2, Eye } from 'lucide-react'
+import { ChevronLeft, QrCode, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Card } from '@/components/ui/Card'
 import api from '@/api/axios'
 import toast from 'react-hot-toast'
-import { cn } from '@/lib/utils'
+
 
 // ── UPI app examples ──────────────────────────────────────────
 const UPI_EXAMPLES = [

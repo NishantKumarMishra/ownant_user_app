@@ -14,7 +14,7 @@ import api from '@/api/axios'
 
 // ── ImageKit config ───────────────────────────────────────────
 const IK_PUBLIC_KEY  = import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY as string
-const IK_URL_ENDPOINT = import.meta.env.VITE_IMAGEKIT_URL as string
+//const IK_URL_ENDPOINT = import.meta.env.VITE_IMAGEKIT_URL as string
 const IK_UPLOAD_URL  = 'https://upload.imagekit.io/api/v1/files/upload'
 
 async function uploadToImageKit(file: File): Promise<{ url: string; fileId: string }> {
