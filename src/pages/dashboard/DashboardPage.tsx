@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   UserPlus, Grid3x3, Bell, BarChart3,
-  MessageCircle, ChevronRight, ChevronRight as Arrow,
+  MessageCircle, ChevronRight
 } from 'lucide-react'
 import { CollectionChart } from '@/components/dashboard/CollectionChart'
 import { Button } from '@/components/ui/Button'
