@@ -37,6 +37,7 @@ export default function App() {
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/otp"      element={<OtpPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/checkin/go" element={<CheckinPage />} />
 
         <Route
           path="/onboarding/pg"
@@ -71,7 +72,7 @@ export default function App() {
           <Route path="/profile"         element={<ProfilePage />} />
           <Route path="/billing"         element={<BillingPage />} />
           <Route path="/payment-settings" element={<PaymentSettingsPage />} />
-          <Route path="/checkin/go" element={<CheckinPage />} />
+          
         </Route>
 
         <Route path="*" element={<CatchAll />} />
