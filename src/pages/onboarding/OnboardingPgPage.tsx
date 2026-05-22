@@ -1,5 +1,3 @@
-// src/pages/onboarding/OnboardingPgPage.tsx
-
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,46 +19,40 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export function OnboardingPgPage() {
-  const navigate   = useNavigate()
-  const createPg   = useCreatePg()
+  const navigate       = useNavigate()
+  const createPg       = useCreatePg()
   const setAccessToken = useAuthStore((s) => s.setAccessToken)
   const setActivePgId  = useAuthStore((s) => s.setActivePgId)
 
-  // Store city coordinates from autocomplete
   const [cityLat, setCityLat] = useState<number | undefined>()
   const [cityLng, setCityLng] = useState<number | undefined>()
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormValues>({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
 
   const onSubmit = async (values: FormValues) => {
     try {
       const result = await createPg.mutateAsync({
-        name:    values.name,
-        address: values.address,
-        city:    values.city,
-        pincode: values.pincode || undefined,
-        phone:   values.phone   || undefined,
+        name:      values.name,
+        address:   values.address,
+        city:      values.city,
+        pincode:   values.pincode || undefined,
+        phone:     values.phone   || undefined,
         latitude:  cityLat,
         longitude: cityLng,
       })
 
-      console.log('PG created:', result)
-
-      // 🔥 CRITICAL FIX — save new JWT
-      if (result?.accessToken) {
-        setAccessToken(result.accessToken)
-      }
-
-      // 🔥 keep store in sync (UI + logic)
-      if (result?.pg?.id) {
-        setActivePgId(result.pg.id)
-      }
+      if (result?.accessToken) setAccessToken(result.accessToken)
+      if (result?.pg?.id)      setActivePgId(result.pg.id)
 
       toast.success('PG created successfully')
-
-      // ✅ Now navigation is SAFE
       navigate('/onboarding/rooms')
 
     } catch (err: any) {
@@ -91,6 +83,7 @@ export function OnboardingPgPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
+          {/* PG Name */}
           <div>
             <label className="block text-sm font-medium text-textPrimary mb-1">
               PG Name <span className="text-danger">*</span>
@@ -100,11 +93,10 @@ export function OnboardingPgPage() {
               placeholder="e.g. Sri Balaji PG"
               className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
-            {errors.name && (
-              <p className="mt-1 text-xs text-danger">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="mt-1 text-xs text-danger">{errors.name.message}</p>}
           </div>
 
+          {/* Address */}
           <div>
             <label className="block text-sm font-medium text-textPrimary mb-1">
               Address <span className="text-danger">*</span>
@@ -115,25 +107,26 @@ export function OnboardingPgPage() {
               placeholder="Street, Area"
               className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
             />
-            {errors.address && (
-              <p className="mt-1 text-xs text-danger">{errors.address.message}</p>
-            )}
+            {errors.address && <p className="mt-1 text-xs text-danger">{errors.address.message}</p>}
           </div>
 
+          {/* City + Pincode */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <CitySearch
-                label="City"
-                placeholder="Type city name..."
-                value={watch('city') ?? ''}
-                onChange={(city, lat, lng) => {
-                  setValue('city', city, { shouldValidate: true })
-                  setCityLat(lat)
-                  setCityLng(lng)
-                }}
-                error={errors.city?.message}
-              />
-            </div>
+            <CitySearch
+              label="City"
+              placeholder="Type city name..."
+              value={watch('city') ?? ''}
+              onChange={(city, lat, lng) => {
+                setValue('city', city, {
+                  shouldValidate: true,
+                  shouldDirty:    true,
+                  shouldTouch:    true,
+                })
+                setCityLat(lat)
+                setCityLng(lng)
+              }}
+              error={errors.city?.message}
+            />
             <div>
               <label className="block text-sm font-medium text-textPrimary mb-1">
                 Pincode
@@ -145,12 +138,11 @@ export function OnboardingPgPage() {
                 maxLength={6}
                 className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-              {errors.pincode && (
-                <p className="mt-1 text-xs text-danger">{errors.pincode.message}</p>
-              )}
+              {errors.pincode && <p className="mt-1 text-xs text-danger">{errors.pincode.message}</p>}
             </div>
           </div>
 
+          {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-textPrimary mb-1">
               PG Contact Number
@@ -162,9 +154,7 @@ export function OnboardingPgPage() {
               maxLength={10}
               className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
-            {errors.phone && (
-              <p className="mt-1 text-xs text-danger">{errors.phone.message}</p>
-            )}
+            {errors.phone && <p className="mt-1 text-xs text-danger">{errors.phone.message}</p>}
           </div>
 
           <button

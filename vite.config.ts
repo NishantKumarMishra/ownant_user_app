@@ -48,4 +48,8 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, 'src') },
   },
+    server: {
+    host: true,   // expose on 192.168.x.x — test on phone
+    port: 5173,
+  },
 })

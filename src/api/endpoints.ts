@@ -24,6 +24,11 @@ export const ENDPOINTS = {
   VACATE_TENANT: (id: string) => `/tenants/${id}/vacate`,
   NOTICE_TENANT: (id: string) => `/tenants/${id}/notice`,
 
+  // ── Google Places (proxy) ─────────────────────────────────────
+  PLACES_AUTOCOMPLETE: '/public/places/autocomplete',
+  PLACES_DETAILS:      '/public/places/details',
+  PLACES_REVERSE:      '/public/places/reverse',
+
   PAYMENTS: '/payments',
   GENERATE_PAYMENT: '/payments/generate',
   GENERATE_BULK: '/payments/generate-bulk',

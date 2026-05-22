@@ -235,7 +235,7 @@ export function ProfilePage() {
                   {listing.isListed && listing.publicUrl && (
                     <>
                       {/* View page */}
-                      <a
+                      {/* <a
                         href={listing.publicUrl}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -248,7 +248,30 @@ export function ProfilePage() {
                             <p className="text-xs text-textSecondary truncate">{listing.publicUrl}</p>
                           </div>
                         </div>
-                      </a>
+                      </a> */}
+
+                        {/* View page */}
+                      {/* View page */}
+<a
+  href={listing.publicUrl}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="flex items-center justify-between w-full rounded-2xl border border-primary/20 bg-primaryLight px-4 py-3 hover:bg-primary/10 transition-colors"
+>
+  <div className="flex min-w-0 items-center gap-2.5">
+    <ExternalLink className="h-4 w-4 flex-shrink-0 text-primary" />
+
+    <div className="min-w-0">
+      <p className="text-xs font-semibold text-primary">
+        Your public page
+      </p>
+
+      <p className="min-w-0 break-all text-xs text-textSecondary">
+        {listing.publicUrl}
+      </p>
+    </div>
+  </div>
+</a>
 
                       {/* Share buttons */}
                       <div className="grid grid-cols-2 gap-2">

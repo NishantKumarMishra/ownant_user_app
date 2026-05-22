@@ -6,6 +6,14 @@ export interface ApiResponse<T> {
   timestamp: string
 }
 
+// interface CheckinStatus {
+//   status: string
+//   kycDone: boolean
+//   signed: boolean
+//   agreementPdfUrl: string | null
+//   completedAt: string | null
+// }
+
 export interface Owner {
   id: string
   name: string

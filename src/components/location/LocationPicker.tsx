@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 // ── TODO: Add Google Maps API key to .env when received ───────
 // VITE_GOOGLE_MAPS_KEY=AIzaSy...
 // Get from: console.cloud.google.com → Enable Places API + Geocoding API
-const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY as string | undefined
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
 
 export interface LocationData {
   address?:     string

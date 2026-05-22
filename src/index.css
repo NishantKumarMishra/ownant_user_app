@@ -5,6 +5,7 @@
 @tailwind utilities;
 
 @layer base {
+  
   html {
     @apply antialiased;
   }

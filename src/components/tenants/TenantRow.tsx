@@ -198,7 +198,11 @@ export function TenantRow({ tenant }: { tenant: TenantListItem }) {
         </Link>
 
         {/* Info */}
-        <Link to={`/tenants/${tenant.id}`} className="flex-1 min-w-0">
+        {/* <Link to={`/tenants/${tenant.id}`} className="flex-1 min-w-0"> */}
+        <Link
+  to={`/tenants/${tenant.id}`}
+  className="flex-1 min-w-0 overflow-hidden"
+>
           <p className="text-sm font-semibold text-textPrimary truncate">{tenant.name}</p>
 
           {/* Notice tenants — show move-out date + days remaining */}

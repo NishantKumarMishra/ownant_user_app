@@ -25,6 +25,8 @@ import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { BillingPage } from '@/pages/profile/BillingPage'
 import { ListingSetupPage } from '@/pages/ListingSetupPage/ListingSetupPage'
 import { PaymentSettingsPage } from '@/pages/PaymentSettings/PaymentSettingsPage'
+import { CheckinPage } from '@/pages/checkin/CheckinPage'
+
 
 export default function App() {
   return (
@@ -69,6 +71,7 @@ export default function App() {
           <Route path="/profile"         element={<ProfilePage />} />
           <Route path="/billing"         element={<BillingPage />} />
           <Route path="/payment-settings" element={<PaymentSettingsPage />} />
+          <Route path="/checkin/go" element={<CheckinPage />} />
         </Route>
 
         <Route path="*" element={<CatchAll />} />

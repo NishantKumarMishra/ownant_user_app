@@ -1,0 +1,74 @@
+{
+  "dashboard": "होम",
+  "rooms": "कमरे",
+  "users": "किरायेदार",
+  "rent_reminder": "पेमेंट",
+  "analytics": "एनालिटिक्स",
+  "notifications": "सूचनाएं",
+  "profile_title": "प्रोफाइल",
+
+  "good_morning": "सुप्रभात",
+  "good_afternoon": "नमस्कार",
+  "good_evening": "शुभ संध्या",
+
+  "collection_rate": "कलेक्शन रेट",
+  "beds_occupied": "भरे हुए बेड",
+  "available": "उपलब्ध",
+  "overdue": "बकाया",
+  "all_clear": "सब क्लियर",
+  "this_month": "इस महीने",
+  "expected": "अपेक्षित",
+
+  "quick_actions": "क्विक एक्शन",
+
+  "Add Tenant": "किरायेदार जोड़ें",
+  "view_rooms": "कमरे देखें",
+  "send_reminder": "रिमाइंडर भेजें",
+  "reports": "रिपोर्ट्स",
+
+  "recent_activity": "हाल की गतिविधि",
+
+  "reminder_sent": "6 किरायेदारों को रिमाइंडर भेजा गया",
+  "about_2_hours": "लगभग 2 घंटे पहले",
+
+  "language": "भाषा",
+
+
+  "dashboard_load_error": "डैशबोर्ड लोड नहीं हो सका",
+  "retry": "फिर से प्रयास करें",
+
+  "vs_expected": "अनुमानित के मुकाबले",
+
+  "need_collection": "पेमेंट कलेक्ट करें",
+
+  "add": "जोड़ें",
+  "tenant": "किरायेदार",
+
+  "view": "देखें",
+
+  "sending": "भेजा जा रहा है...",
+  "send": "भेजें",
+  "reminder": "रिमाइंडर",
+
+  "show_less": "कम दिखाएं ↑",
+  "see_all": "सभी देखें",
+  "activities": "गतिविधियां ↓",
+
+  "six_month_collection": "6 महीने का कलेक्शन",
+  "expected_vs_collected": "अनुमानित बनाम प्राप्त",
+
+  "generate_payments": "पेमेंट जनरेट करें",
+
+  "cancel": "रद्द करें",
+  "confirm": "पुष्टि करें",
+
+  "upcoming_dues": "आने वाले बकाया",
+  "next_2_days": "अगले 2 दिन →",
+
+  "due_today": "आज देय",
+  "due_tomorrow": "कल देय",
+
+  "room": "कमरा",
+
+  "collect_now": "अभी कलेक्ट करें"
+}

@@ -1,16 +1,20 @@
 import { NavLink } from 'react-router-dom'
 import { CreditCard, Home, LayoutGrid, UserRound, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const items = [
-  { to: '/dashboard', label: 'Home', icon: Home },
-  { to: '/rooms', label: 'Rooms', icon: LayoutGrid },
-  { to: '/tenants', label: 'Tenants', icon: Users },
-  { to: '/payments', label: 'Payments', icon: CreditCard },
-  { to: '/profile', label: 'Profile', icon: UserRound },
-] as const
+import { useTranslation } from "react-i18next";
 
 export function BottomNav() {
+
+  const { t } = useTranslation();
+
+  const items = [
+    { to: '/dashboard', label: t("dashboard"), icon: Home },
+    { to: '/rooms', label: t("rooms"), icon: LayoutGrid },
+    { to: '/tenants', label: t("users"), icon: Users },
+    { to: '/payments', label: t("rent_reminder"), icon: CreditCard },
+    { to: '/profile', label: t("analytics"), icon: UserRound },
+  ];
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface lg:hidden">
       <ul className="mx-auto flex max-w-lg justify-between px-2 pb-safe pt-1">
@@ -29,10 +33,12 @@ export function BottomNav() {
                 <>
                   <span className="relative">
                     <Icon className="h-5 w-5" />
+
                     {isActive ? (
                       <span className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
                     ) : null}
                   </span>
+
                   {label}
                 </>
               )}

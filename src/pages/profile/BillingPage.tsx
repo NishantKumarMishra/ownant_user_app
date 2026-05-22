@@ -464,6 +464,7 @@ export function BillingPage() {
 // ── Current Plan Card ─────────────────────────────────────────
 function CurrentPlanCard({ sub }: { sub: FullSubscription }) {
   const effective = sub.effectiveBedLimit
+  console.log("Active subscription:", sub);
   const bedPct    = effective === -1 ? 0 : Math.min(sub.bedUsagePct, 100)
   const pgPct     = sub.maxPgs === -1  ? 0 : Math.min(sub.pgUsagePct, 100)
   const bedColor  = bedPct >= 95 ? 'bg-danger'

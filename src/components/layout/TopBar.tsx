@@ -5,6 +5,7 @@ import { PgSwitcher } from '@/components/layout/PgSwitcher'
 import { useAuthStore } from '@/store/authStore'
 import { usePgStore } from '@/store/pgStore'
 import { cn } from '@/lib/utils'
+import { useTranslation } from "react-i18next";
 
 
 function initials(name: string) {
@@ -24,14 +25,14 @@ export function TopBar({ greeting }: TopBarProps) {
   const owner = useAuthStore((s) => s.owner)
   const { activePgName } = usePgStore()
   
- 
+ const { t } = useTranslation();
   
   const [sheetOpen, setSheetOpen] = useState(false)
   const displayGreeting =
     greeting ??
     (() => {
       const h = new Date().getHours()
-      const part = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+      const part = h < 12 ? t("good_morning") : h < 17 ? t("good_afternoon") : t("good_evening")
       return `${part}, ${owner?.name?.split(' ')[0] ?? 'there'}`
     })()
 
@@ -64,6 +65,8 @@ export function TopBar({ greeting }: TopBarProps) {
         </div>
       </header>
       <PgSwitcher open={sheetOpen} onOpenChange={setSheetOpen} />
+
+      {/* <LanguageSwitcher /> */}
     </>
   )
 }

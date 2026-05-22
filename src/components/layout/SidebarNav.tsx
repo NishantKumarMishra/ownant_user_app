@@ -8,23 +8,32 @@ import {
   UserRound,
   Users,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
-const main = [
-  { to: '/dashboard', label: 'Home', icon: Home },
-  { to: '/rooms', label: 'Rooms', icon: LayoutGrid },
-  { to: '/tenants', label: 'Tenants', icon: Users },
-  { to: '/payments', label: 'Payments', icon: CreditCard },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/notifications', label: 'Notifications', icon: Bell },
-  { to: '/profile', label: 'Profile', icon: UserRound },
-] as const
+import { cn } from '@/lib/utils'
+import { useTranslation } from "react-i18next";
 
 export function SidebarNav() {
+
+  const { t } = useTranslation();
+
+  const main = [
+    { to: '/dashboard', label: t("dashboard"), icon: Home },
+    { to: '/rooms', label: t("rooms"), icon: LayoutGrid },
+    { to: '/tenants', label: t("users"), icon: Users },
+    { to: '/payments', label: t("rent_reminder"), icon: CreditCard },
+    { to: '/analytics', label: t("analytics"), icon: BarChart3 },
+    { to: '/notifications', label: t("notifications"), icon: Bell },
+    { to: '/profile', label: t("profile_title"), icon: UserRound },
+  ] as const
+
   return (
     <aside className="hidden w-56 shrink-0 border-r border-border bg-surface lg:block">
       <div className="sticky top-0 flex h-svh flex-col gap-1 p-3 pt-6">
-        <p className="px-3 pb-4 text-lg font-bold text-primary">OWNANT</p>
+
+        <p className="px-3 pb-4 text-lg font-bold text-primary">
+          OWNANT
+        </p>
+
         {main.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}

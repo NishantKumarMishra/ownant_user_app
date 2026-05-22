@@ -1,0 +1,35 @@
+{
+  "dashboard": "Home",
+  "rooms": "Rooms",
+  "users": "Tenants",
+  "rent_reminder": "Payments",
+  "analytics": "Analytics",
+  "notifications": "Notifications",
+  "profile_title": "Profile",
+
+  "good_morning": "Good morning",
+  "good_afternoon": "Good afternoon",
+  "good_evening": "Good evening",
+
+  "collection_rate": "Collection rate",
+  "beds_occupied": "Beds occupied",
+  "available": "available",
+  "overdue": "Overdue",
+  "all_clear": "All clear",
+  "this_month": "This month",
+  "expected": "Expected",
+
+  "quick_actions": "Quick actions",
+
+  "add_tenant": "Add Tenant",
+  "view_rooms": "View Rooms",
+  "send_reminder": "Send Reminder",
+  "reports": "Reports",
+
+  "recent_activity": "Recent activity",
+
+  "reminder_sent": "Reminder sent to 6 tenants",
+  "about_2_hours": "about 2 hours ago",
+
+  "language": "Language"
+}

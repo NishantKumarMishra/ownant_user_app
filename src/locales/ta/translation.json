@@ -1,0 +1,36 @@
+{
+  "dashboard": "ஹோம்",
+  "rooms": "அறைகள்",
+  "users": "குத்தகையாளர்கள்",
+  "rent_reminder": "பணம்",
+  "analytics": "சுயவிவரம்",
+
+  "vacant_beds": "காலி படுக்கைகள்",
+  "occupied_beds": "நிரம்பிய படுக்கைகள்",
+  "total_revenue": "மொத்த வருமானம்",
+  "electricity_split": "மின்சார பிரிப்பு",
+
+  "send_whatsapp": "வாட்ஸ்அப் அனுப்பு",
+  "rent_due": "நிலுவை வாடகம்",
+  "paid": "செலுத்தப்பட்டது",
+  "overdue": "தாமதமானது",
+
+  "add_tenant": "குத்தகையாளர் சேர்க்கவும்",
+  "check_in": "செக் இன்",
+  "check_out": "செக் அவுட்",
+
+  "search_pg": "PG தேடுக",
+  "near_me": "என் அருகில்",
+  "public_listing": "பொது பட்டியல்",
+
+  "dashboard_title": "டாஷ்போர்டு",
+  "analytics_title": "பகுப்பாய்வு",
+  "payments_title": "பணம்",
+  "profile_title": "சுயவிவரம்",
+
+  "save": "சேமிக்கவும்",
+  "cancel": "ரத்து செய்",
+  "submit": "சமர்ப்பிக்கவும்",
+
+  "language": "மொழி"
+}
