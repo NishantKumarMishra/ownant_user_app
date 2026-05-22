@@ -30,11 +30,6 @@ interface CheckinInfo {
   expired: boolean
 }
 
-
-
-// ── ImageKit upload ───────────────────────────────────────────
-
-
 // ── Signature pad ─────────────────────────────────────────────
 function SignaturePad({ onSign }: { onSign: (dataUrl: string) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -174,8 +169,6 @@ function PhotoUploadBox({
   )
 }
 
-// ── Step indicator ────────────────────────────────────────────
-
 // ═══════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ═══════════════════════════════════════════════════════════════
@@ -183,16 +176,16 @@ export function CheckinPage() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('t') ?? ''
 
-  const [step,    setStep]    = useState(0)
-  const [info,    setInfo]    = useState<CheckinInfo | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState('')
+  const [step,       setStep]       = useState(0)
+  const [info,       setInfo]       = useState<CheckinInfo | null>(null)
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // Step 2 — KYC state
-  const [idProofType,   setIdProofType]   = useState('AADHAAR')
-  const [idFrontUrl,    setIdFrontUrl]    = useState<string | null>(null)
-  const [idBackUrl,     setIdBackUrl]     = useState<string | null>(null)
+  const [idProofType,    setIdProofType]    = useState('AADHAAR')
+  const [idFrontUrl,     setIdFrontUrl]     = useState<string | null>(null)
+  const [idBackUrl,      setIdBackUrl]      = useState<string | null>(null)
   const [uploadingFront, setUploadingFront] = useState(false)
   const [uploadingBack,  setUploadingBack]  = useState(false)
   const [emergencyName,  setEmergencyName]  = useState('')
@@ -203,7 +196,6 @@ export function CheckinPage() {
   const [signatureUrl, setSignatureUrl] = useState('')
   const [agreed,       setAgreed]       = useState(false)
   const [completed,    setCompleted]    = useState(false)
-  
 
   // Load checkin info
   useEffect(() => {
@@ -213,8 +205,7 @@ export function CheckinPage() {
       .then(d => {
         if (d.data) {
           setInfo(d.data)
-          // Resume from saved step
-          if (d.data.status === 'KYC_DONE') setStep(2)
+          if (d.data.status === 'KYC_DONE')   setStep(2)
           else if (d.data.status === 'COMPLETED') { setCompleted(true); setStep(3) }
         } else {
           setError(d.message ?? 'Invalid check-in link')
@@ -224,40 +215,54 @@ export function CheckinPage() {
       .finally(() => setLoading(false))
   }, [token])
 
+  // ── Upload via backend-signed ImageKit ────────────────────────
+  // WHY: Public checkin page has no JWT → can't use authenticated endpoint
+  // Solution: backend provides public auth endpoint at /public/imagekit/auth
   const handleUpload = async (file: File, side: 'front' | 'back') => {
     const setUploading = side === 'front' ? setUploadingFront : setUploadingBack
     const setUrl       = side === 'front' ? setIdFrontUrl     : setIdBackUrl
     setUploading(true)
+    setError('')
     try {
-      // Direct unsigned upload to ImageKit
+      // Step 1 — get signed auth from public backend endpoint (no JWT needed)
+      const authRes = await fetch(`${API_BASE}/api/v1/public/imagekit/auth`)
+      if (!authRes.ok) throw new Error('Auth failed')
+      const authData = await authRes.json()
+      const auth = authData.data ?? authData
+
+      // Step 2 — upload to ImageKit with signature
       const formData = new FormData()
-      formData.append('file', file)
-      formData.append('publicKey', IK_PUBLIC_KEY)
-      formData.append('fileName', `kyc-${side}-${Date.now()}`)
-      formData.append('folder', '/ownant/kyc')
+      formData.append('file',              file)
+      formData.append('publicKey',         IK_PUBLIC_KEY)
+      formData.append('fileName',          `kyc-${side}-${Date.now()}-${file.name.replace(/\s+/g, '-')}`)
+      formData.append('folder',            '/ownant/kyc')
       formData.append('useUniqueFileName', 'true')
+      formData.append('signature',         auth.signature)
+      formData.append('expire',            String(auth.expire))
+      formData.append('token',             auth.token)
+
       const res  = await fetch(IK_UPLOAD_URL, { method: 'POST', body: formData })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.message)
+      if (!res.ok) throw new Error(data.message ?? 'Upload failed')
       setUrl(data.url)
-    } catch {
-      setError('Upload failed. Please try again.')
+    } catch (e: any) {
+      setError('Upload failed: ' + (e.message ?? 'Please try again'))
     } finally {
       setUploading(false)
     }
   }
 
   const submitKyc = async () => {
-    if (!idFrontUrl || !idBackUrl) { setError('Please upload both ID photos'); return }
+    if (!idFrontUrl || !idBackUrl)         { setError('Please upload both ID photos'); return }
     if (!emergencyName || !emergencyPhone) { setError('Emergency contact is required'); return }
-    if (!currentAddress) { setError('Current address is required'); return }
+    if (!currentAddress)                   { setError('Current address is required'); return }
     setSubmitting(true)
     setError('')
     try {
       const res = await fetch(`${API_BASE}/public/checkin/${token}/kyc`, {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idProofType, idFrontUrl, idBackUrl, emergencyName, emergencyPhone, currentAddress })
+        body:    JSON.stringify({ idProofType, idFrontUrl, idBackUrl, emergencyName, emergencyPhone, currentAddress })
       })
       const data = await res.json()
       if (res.ok) setStep(2)
@@ -271,23 +276,18 @@ export function CheckinPage() {
 
   const submitSign = async () => {
     if (!signatureUrl) { setError('Please sign the agreement'); return }
-    if (!agreed) { setError('Please agree to the terms'); return }
+    if (!agreed)       { setError('Please agree to the terms'); return }
     setSubmitting(true)
     setError('')
     try {
       const res = await fetch(`${API_BASE}/public/checkin/${token}/sign`, {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signatureImageUrl: signatureUrl })
+        body:    JSON.stringify({ signatureImageUrl: signatureUrl })
       })
       const data = await res.json()
-      if (res.ok) {
-        
-        setCompleted(true)
-        setStep(3)
-      } else {
-        setError(data.message ?? 'Submission failed')
-      }
+      if (res.ok) { setCompleted(true); setStep(3) }
+      else setError(data.message ?? 'Submission failed')
     } catch {
       setError('Network error. Please try again.')
     } finally {
@@ -340,48 +340,24 @@ export function CheckinPage() {
             </p>
           </div>
           <div className="bg-surface border border-border rounded-2xl p-4 text-left space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-xl bg-primaryLight flex items-center justify-center flex-shrink-0">
-                <Home className="h-4 w-4 text-primary" />
+            {[
+              { icon: Home,     label: 'Property',    value: info?.pgName },
+              { icon: FileText, label: 'Room & Bed',  value: `Room ${info?.roomNumber} · Bed ${info?.bedLabel}` },
+              { icon: Calendar, label: 'Move-in Date',value: info?.moveInDate },
+              { icon: Banknote, label: 'Monthly Rent', value: `₹${info?.monthlyRent}` },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-xl bg-primaryLight flex items-center justify-center flex-shrink-0">
+                  <Icon className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-textSecondary">{label}</p>
+                  <p className="text-sm font-semibold text-textPrimary">{value}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-textSecondary">Property</p>
-                <p className="text-sm font-semibold text-textPrimary">{info?.pgName}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-xl bg-primaryLight flex items-center justify-center flex-shrink-0">
-                <FileText className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-textSecondary">Room & Bed</p>
-                <p className="text-sm font-semibold text-textPrimary">
-                  Room {info?.roomNumber} · Bed {info?.bedLabel}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-xl bg-primaryLight flex items-center justify-center flex-shrink-0">
-                <Calendar className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-textSecondary">Move-in Date</p>
-                <p className="text-sm font-semibold text-textPrimary">{info?.moveInDate}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-xl bg-primaryLight flex items-center justify-center flex-shrink-0">
-                <Banknote className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-textSecondary">Monthly Rent</p>
-                <p className="text-sm font-semibold text-textPrimary">₹{info?.monthlyRent}</p>
-              </div>
-            </div>
+            ))}
           </div>
-          <p className="text-xs text-textMuted">
-            ~ Powered by Ownant
-          </p>
+          <p className="text-xs text-textMuted">~ Powered by Ownant</p>
         </div>
       </div>
     )
@@ -406,8 +382,8 @@ export function CheckinPage() {
             <div key={i} className="flex items-center gap-2 flex-1">
               <div className={cn(
                 'h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0',
-                i < step  ? 'bg-success text-white'
-                : i === step ? 'bg-primary text-white'
+                i < step    ? 'bg-success text-white'
+                : i === step  ? 'bg-primary text-white'
                 : 'bg-border text-textMuted'
               )}>
                 {i < step ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
@@ -449,10 +425,10 @@ export function CheckinPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { icon: User,     label: 'Tenant',    value: info.tenantName },
-                  { icon: FileText, label: 'Room/Unit',  value: `Room ${info.roomNumber} · Bed ${info.bedLabel}` },
-                  { icon: Calendar, label: 'Check-in',   value: info.moveInDate },
-                  { icon: Banknote, label: 'Rent',       value: `₹${info.monthlyRent}/mo` },
+                  { label: 'Tenant',   value: info.tenantName },
+                  { label: 'Room/Unit', value: `Room ${info.roomNumber} · Bed ${info.bedLabel}` },
+                  { label: 'Check-in',  value: info.moveInDate },
+                  { label: 'Rent',      value: `₹${info.monthlyRent}/mo` },
                 ].map(({ label, value }) => (
                   <div key={label} className="bg-background rounded-xl p-3">
                     <p className="text-xs text-textSecondary mb-0.5">{label}</p>
@@ -608,7 +584,6 @@ export function CheckinPage() {
               <p className="text-sm text-textSecondary">Review and sign your agreement</p>
             </div>
 
-            {/* Agreement preview */}
             <div className="bg-surface border border-border rounded-2xl p-5 space-y-3 text-sm">
               <h3 className="font-bold text-textPrimary">Leave and License Agreement</h3>
               <div className="space-y-2 text-textSecondary text-xs leading-relaxed">
@@ -627,7 +602,6 @@ export function CheckinPage() {
               </p>
             </div>
 
-            {/* Signature */}
             <div>
               <label className="text-xs font-semibold text-textSecondary uppercase tracking-wide mb-2 block">
                 Your Signature <span className="text-danger">*</span>
@@ -635,7 +609,6 @@ export function CheckinPage() {
               <SignaturePad onSign={setSignatureUrl} />
             </div>
 
-            {/* Agreement checkbox */}
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
