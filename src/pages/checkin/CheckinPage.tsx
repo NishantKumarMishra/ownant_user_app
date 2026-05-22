@@ -10,24 +10,29 @@ import {
   Shield, Home, Calendar, Banknote, AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import api from '@/api/axios'
 
-// ── API base (public — no auth header needed) ─────────────────
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:8080'
+// ── Constants ─────────────────────────────────────────────────
 const IK_PUBLIC_KEY = import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY as string
 const IK_UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload'
 
+// WHY use api (axios) instead of raw fetch:
+//   api already has VITE_API_BASE_URL as baseURL
+//   Works correctly in both dev (http://192.168.x.x) and prod (https://...)
+//   No HTTPS/HTTP mismatch issues
+
 // ── Types ─────────────────────────────────────────────────────
 interface CheckinInfo {
-  status: string
-  pgName: string
-  pgAddress: string
-  pgCity: string
-  tenantName: string
-  roomNumber: string
-  bedLabel: string
-  moveInDate: string
+  status:      string
+  pgName:      string
+  pgAddress:   string
+  pgCity:      string
+  tenantName:  string
+  roomNumber:  string
+  bedLabel:    string
+  moveInDate:  string
   monthlyRent: number
-  expired: boolean
+  expired:     boolean
 }
 
 // ── Signature pad ─────────────────────────────────────────────
@@ -39,10 +44,7 @@ function SignaturePad({ onSign }: { onSign: (dataUrl: string) => void }) {
   const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect()
     if ('touches' in e) {
-      return {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top,
-      }
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top }
     }
     return { x: e.clientX - rect.left, y: e.clientY - rect.top }
   }
@@ -74,15 +76,12 @@ function SignaturePad({ onSign }: { onSign: (dataUrl: string) => void }) {
 
   const endDraw = () => {
     isDrawing.current = false
-    if (hasSigned) {
-      onSign(canvasRef.current!.toDataURL('image/png'))
-    }
+    if (hasSigned) onSign(canvasRef.current!.toDataURL('image/png'))
   }
 
   const clear = () => {
     const canvas = canvasRef.current!
-    const ctx    = canvas.getContext('2d')!
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    canvas.getContext('2d')!.clearRect(0, 0, canvas.width, canvas.height)
     setHasSigned(false)
     onSign('')
   }
@@ -109,11 +108,8 @@ function SignaturePad({ onSign }: { onSign: (dataUrl: string) => void }) {
           </div>
         )}
         {hasSigned && (
-          <button
-            type="button"
-            onClick={clear}
-            className="absolute top-2 right-2 h-6 w-6 rounded-full bg-danger/10 flex items-center justify-center"
-          >
+          <button type="button" onClick={clear}
+            className="absolute top-2 right-2 h-6 w-6 rounded-full bg-danger/10 flex items-center justify-center">
             <X className="h-3.5 w-3.5 text-danger" />
           </button>
         )}
@@ -124,32 +120,21 @@ function SignaturePad({ onSign }: { onSign: (dataUrl: string) => void }) {
 }
 
 // ── Photo upload box ──────────────────────────────────────────
-function PhotoUploadBox({
-  label, url, onUpload, loading
-}: {
-  label: string
-  url: string | null
-  onUpload: (file: File) => void
-  loading: boolean
+function PhotoUploadBox({ label, url, onUpload, loading }: {
+  label: string; url: string | null; onUpload: (file: File) => void; loading: boolean
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
-
   return (
     <div
       onClick={() => !loading && inputRef.current?.click()}
       className={cn(
         'relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 cursor-pointer transition-all',
-        url ? 'border-success bg-success/5' : 'border-border hover:border-primary/40 hover:bg-primaryLight',
+        url     ? 'border-success bg-success/5' : 'border-border hover:border-primary/40 hover:bg-primaryLight',
         loading && 'opacity-70 cursor-wait'
       )}
     >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={e => e.target.files?.[0] && onUpload(e.target.files[0])}
-      />
+      <input ref={inputRef} type="file" accept="image/*" className="hidden"
+        onChange={e => e.target.files?.[0] && onUpload(e.target.files[0])} />
       {loading ? (
         <Loader2 className="h-8 w-8 text-primary animate-spin" />
       ) : url ? (
@@ -197,15 +182,23 @@ export function CheckinPage() {
   const [agreed,       setAgreed]       = useState(false)
   const [completed,    setCompleted]    = useState(false)
 
-  // Load checkin info
+  // ── Load checkin info ─────────────────────────────────────────
+  // Uses api axios — baseURL from VITE_API_BASE_URL (works in prod)
+  // /public/checkin/* is mapped in backend at root level not /api/v1
+  // So we use the raw baseURL without /api/v1 suffix
   useEffect(() => {
     if (!token) { setError('Invalid link'); setLoading(false); return }
-    fetch(`${API_BASE}/public/checkin/${token}`)
+
+    // api.defaults.baseURL = http://x.x.x.x:8080/api/v1
+    // checkin is at /public/checkin — strip /api/v1
+    const baseUrl = (api.defaults.baseURL ?? '').replace('/api/v1', '')
+
+    fetch(`${baseUrl}/public/checkin/${token}`)
       .then(r => r.json())
       .then(d => {
         if (d.data) {
           setInfo(d.data)
-          if (d.data.status === 'KYC_DONE')   setStep(2)
+          if (d.data.status === 'KYC_DONE')        setStep(2)
           else if (d.data.status === 'COMPLETED') { setCompleted(true); setStep(3) }
         } else {
           setError(d.message ?? 'Invalid check-in link')
@@ -215,22 +208,19 @@ export function CheckinPage() {
       .finally(() => setLoading(false))
   }, [token])
 
-  // ── Upload via backend-signed ImageKit ────────────────────────
-  // WHY: Public checkin page has no JWT → can't use authenticated endpoint
-  // Solution: backend provides public auth endpoint at /public/imagekit/auth
+  // ── ImageKit upload ───────────────────────────────────────────
+  // Step 1: Get auth from backend via api axios (handles prod URL correctly)
+  // Step 2: Upload directly to ImageKit with signed token
   const handleUpload = async (file: File, side: 'front' | 'back') => {
     const setUploading = side === 'front' ? setUploadingFront : setUploadingBack
     const setUrl       = side === 'front' ? setIdFrontUrl     : setIdBackUrl
     setUploading(true)
     setError('')
     try {
-      // Step 1 — get signed auth from public backend endpoint (no JWT needed)
-      const authRes = await fetch(`${API_BASE}/api/v1/public/imagekit/auth`)
-      if (!authRes.ok) throw new Error('Auth failed')
-      const authData = await authRes.json()
-      const auth = authData.data ?? authData
+      // Uses api axios — baseURL already correct for prod/dev
+      const authRes  = await api.get('/public/imagekit/auth')
+      const auth     = authRes.data?.data ?? authRes.data
 
-      // Step 2 — upload to ImageKit with signature
       const formData = new FormData()
       formData.append('file',              file)
       formData.append('publicKey',         IK_PUBLIC_KEY)
@@ -252,6 +242,7 @@ export function CheckinPage() {
     }
   }
 
+  // ── Submit KYC ────────────────────────────────────────────────
   const submitKyc = async () => {
     if (!idFrontUrl || !idBackUrl)         { setError('Please upload both ID photos'); return }
     if (!emergencyName || !emergencyPhone) { setError('Emergency contact is required'); return }
@@ -259,7 +250,8 @@ export function CheckinPage() {
     setSubmitting(true)
     setError('')
     try {
-      const res = await fetch(`${API_BASE}/public/checkin/${token}/kyc`, {
+      const baseUrl = (api.defaults.baseURL ?? '').replace('/api/v1', '')
+      const res = await fetch(`${baseUrl}/public/checkin/${token}/kyc`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ idProofType, idFrontUrl, idBackUrl, emergencyName, emergencyPhone, currentAddress })
@@ -274,13 +266,15 @@ export function CheckinPage() {
     }
   }
 
+  // ── Submit Signature ──────────────────────────────────────────
   const submitSign = async () => {
     if (!signatureUrl) { setError('Please sign the agreement'); return }
     if (!agreed)       { setError('Please agree to the terms'); return }
     setSubmitting(true)
     setError('')
     try {
-      const res = await fetch(`${API_BASE}/public/checkin/${token}/sign`, {
+      const baseUrl = (api.defaults.baseURL ?? '').replace('/api/v1', '')
+      const res = await fetch(`${baseUrl}/public/checkin/${token}/sign`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ signatureImageUrl: signatureUrl })
@@ -341,9 +335,9 @@ export function CheckinPage() {
           </div>
           <div className="bg-surface border border-border rounded-2xl p-4 text-left space-y-3">
             {[
-              { icon: Home,     label: 'Property',    value: info?.pgName },
-              { icon: FileText, label: 'Room & Bed',  value: `Room ${info?.roomNumber} · Bed ${info?.bedLabel}` },
-              { icon: Calendar, label: 'Move-in Date',value: info?.moveInDate },
+              { icon: Home,     label: 'Property',     value: info?.pgName },
+              { icon: FileText, label: 'Room & Bed',   value: `Room ${info?.roomNumber} · Bed ${info?.bedLabel}` },
+              { icon: Calendar, label: 'Move-in Date', value: info?.moveInDate },
               { icon: Banknote, label: 'Monthly Rent', value: `₹${info?.monthlyRent}` },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-center gap-3">
@@ -420,12 +414,10 @@ export function CheckinPage() {
                   </p>
                 </div>
               </div>
-
               <div className="h-px bg-border" />
-
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Tenant',   value: info.tenantName },
+                  { label: 'Tenant',    value: info.tenantName },
                   { label: 'Room/Unit', value: `Room ${info.roomNumber} · Bed ${info.bedLabel}` },
                   { label: 'Check-in',  value: info.moveInDate },
                   { label: 'Rent',      value: `₹${info.monthlyRent}/mo` },
@@ -436,21 +428,17 @@ export function CheckinPage() {
                   </div>
                 ))}
               </div>
-
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
                 <p className="text-xs text-amber-700">
-                  <span className="font-semibold">Wrong details?</span>{' '}
-                  Contact your PG owner to update.
+                  <span className="font-semibold">Wrong details?</span> Contact your PG owner to update.
                 </p>
               </div>
             </div>
-
             <button
               onClick={() => { setError(''); setStep(1) }}
               className="w-full bg-primary text-white rounded-2xl py-4 font-bold text-base flex items-center justify-center gap-2"
             >
-              Fast Check-in ⚡
-              <ChevronRight className="h-5 w-5" />
+              Fast Check-in ⚡ <ChevronRight className="h-5 w-5" />
             </button>
             <p className="text-center text-xs text-textMuted">~ Powered by Ownant</p>
           </div>
@@ -464,52 +452,37 @@ export function CheckinPage() {
               <p className="text-sm text-textSecondary">Upload your ID proof and emergency contact</p>
             </div>
 
-            {/* ID Proof Type */}
             <div>
               <label className="text-xs font-semibold text-textSecondary uppercase tracking-wide mb-2 block">
                 ID Proof Type
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENSE'].map(type => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setIdProofType(type)}
+                  <button key={type} type="button" onClick={() => setIdProofType(type)}
                     className={cn(
                       'py-2.5 rounded-xl border text-xs font-semibold transition-all',
                       idProofType === type
                         ? 'bg-primary text-white border-primary'
                         : 'bg-surface border-border text-textSecondary'
-                    )}
-                  >
+                    )}>
                     {type === 'DRIVING_LICENSE' ? 'Driving License' : type}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* ID Photos */}
             <div>
               <label className="text-xs font-semibold text-textSecondary uppercase tracking-wide mb-2 block">
                 ID Photos <span className="text-danger">*</span>
               </label>
               <div className="grid grid-cols-2 gap-3">
-                <PhotoUploadBox
-                  label="Front side"
-                  url={idFrontUrl}
-                  onUpload={f => handleUpload(f, 'front')}
-                  loading={uploadingFront}
-                />
-                <PhotoUploadBox
-                  label="Back side"
-                  url={idBackUrl}
-                  onUpload={f => handleUpload(f, 'back')}
-                  loading={uploadingBack}
-                />
+                <PhotoUploadBox label="Front side" url={idFrontUrl}
+                  onUpload={f => handleUpload(f, 'front')} loading={uploadingFront} />
+                <PhotoUploadBox label="Back side" url={idBackUrl}
+                  onUpload={f => handleUpload(f, 'back')} loading={uploadingBack} />
               </div>
             </div>
 
-            {/* Emergency Contact */}
             <div>
               <label className="text-xs font-semibold text-textSecondary uppercase tracking-wide mb-2 block">
                 Emergency Contact <span className="text-danger">*</span>
@@ -517,41 +490,28 @@ export function CheckinPage() {
               <div className="space-y-3">
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-textSecondary" />
-                  <input
-                    value={emergencyName}
-                    onChange={e => setEmergencyName(e.target.value)}
+                  <input value={emergencyName} onChange={e => setEmergencyName(e.target.value)}
                     placeholder="Full name"
-                    className="w-full bg-surface border border-border rounded-xl pl-9 pr-4 py-3 text-sm outline-none focus:border-primary"
-                  />
+                    className="w-full bg-surface border border-border rounded-xl pl-9 pr-4 py-3 text-sm outline-none focus:border-primary" />
                 </div>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-textSecondary" />
-                  <input
-                    value={emergencyPhone}
-                    onChange={e => setEmergencyPhone(e.target.value)}
-                    placeholder="Phone number"
-                    inputMode="tel"
-                    maxLength={10}
-                    className="w-full bg-surface border border-border rounded-xl pl-9 pr-4 py-3 text-sm outline-none focus:border-primary"
-                  />
+                  <input value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)}
+                    placeholder="Phone number" inputMode="tel" maxLength={10}
+                    className="w-full bg-surface border border-border rounded-xl pl-9 pr-4 py-3 text-sm outline-none focus:border-primary" />
                 </div>
               </div>
             </div>
 
-            {/* Current Address */}
             <div>
               <label className="text-xs font-semibold text-textSecondary uppercase tracking-wide mb-2 block">
                 Permanent / Current Address <span className="text-danger">*</span>
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-3 h-4 w-4 text-textSecondary" />
-                <textarea
-                  value={currentAddress}
-                  onChange={e => setCurrentAddress(e.target.value)}
-                  placeholder="Full address with city, state, pincode"
-                  rows={3}
-                  className="w-full bg-surface border border-border rounded-xl pl-9 pr-4 py-3 text-sm outline-none focus:border-primary resize-none"
-                />
+                <textarea value={currentAddress} onChange={e => setCurrentAddress(e.target.value)}
+                  placeholder="Full address with city, state, pincode" rows={3}
+                  className="w-full bg-surface border border-border rounded-xl pl-9 pr-4 py-3 text-sm outline-none focus:border-primary resize-none" />
               </div>
             </div>
 
@@ -564,11 +524,8 @@ export function CheckinPage() {
               </div>
             </div>
 
-            <button
-              onClick={submitKyc}
-              disabled={submitting}
-              className="w-full bg-primary text-white rounded-2xl py-4 font-bold text-base flex items-center justify-center gap-2 disabled:opacity-60"
-            >
+            <button onClick={submitKyc} disabled={submitting}
+              className="w-full bg-primary text-white rounded-2xl py-4 font-bold text-base flex items-center justify-center gap-2 disabled:opacity-60">
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                 <>Submit & Continue <ChevronRight className="h-5 w-5" /></>
               )}
@@ -598,7 +555,7 @@ export function CheckinPage() {
               </div>
               <div className="h-px bg-border" />
               <p className="text-xs text-textMuted leading-relaxed">
-                By signing, you agree to pay rent on time via Ownant platform, use the premises for residential purposes only, and abide by all house rules and terms of this agreement.
+                By signing, you agree to pay rent on time via Ownant platform, use the premises for residential purposes only, and abide by all house rules.
               </p>
             </div>
 
@@ -610,27 +567,17 @@ export function CheckinPage() {
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={e => setAgreed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-border text-primary"
-              />
+              <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-border text-primary" />
               <p className="text-xs text-textSecondary leading-relaxed">
                 I have read and agree to the terms of this rental agreement. I confirm all information provided is accurate.
               </p>
             </label>
 
-            <button
-              onClick={submitSign}
-              disabled={submitting || !signatureUrl || !agreed}
-              className="w-full bg-primary text-white rounded-2xl py-4 font-bold text-base flex items-center justify-center gap-2 disabled:opacity-60"
-            >
+            <button onClick={submitSign} disabled={submitting || !signatureUrl || !agreed}
+              className="w-full bg-primary text-white rounded-2xl py-4 font-bold text-base flex items-center justify-center gap-2 disabled:opacity-60">
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                <>
-                  <PenLine className="h-5 w-5" />
-                  Sign & Complete Check-in
-                </>
+                <><PenLine className="h-5 w-5" /> Sign & Complete Check-in</>
               )}
             </button>
             <p className="text-center text-xs text-textMuted">~ Powered by Ownant</p>
