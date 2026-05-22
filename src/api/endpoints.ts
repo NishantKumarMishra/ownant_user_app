@@ -63,6 +63,19 @@ PAYMENT_SETTINGS_PREVIEW: '/payment-settings/upi/preview',
   VERIFY_PAYMENT:      '/billing/verify-payment',
   CANCEL_SUBSCRIPTION: '/billing/cancel',
 
+  // Add these to endpoints.ts
+
+  // ── Electricity ───────────────────────────────────────────────
+  ELECTRICITY_CONFIG:          '/electricity/config',
+  ELECTRICITY_BILLS:           '/electricity/bills',
+  ELECTRICITY_BILLS_PREVIEW:   '/electricity/bills/preview',
+  ELECTRICITY_BILLS_GENERATE:  '/electricity/bills/generate',
+  ELECTRICITY_BILL_BY_ID:      (id: string) => `/electricity/bills/${id}`,
+  ELECTRICITY_DUE_PAY:         (id: string) => `/electricity/dues/${id}/pay`,
+  ELECTRICITY_DUE_WAIVE:       (id: string) => `/electricity/dues/${id}/waive`,
+  ELECTRICITY_DUE_EXCLUDE:     (id: string) => `/electricity/dues/${id}/exclude`,
+  ELECTRICITY_TENANT_DUES:     (id: string) => `/electricity/dues/tenant/${id}`,
+
   // ── Billing — addon beds ──────────────────────────────────────
   ADDON_CHECKOUT:      '/billing/addons/checkout',
   ADDON_VERIFY:        '/billing/addons/verify',

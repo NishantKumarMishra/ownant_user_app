@@ -404,3 +404,88 @@ export interface PaginatedResponse<T> {
   totalElements: number
   totalPages: number
 }
+// Add these to types.ts
+
+// ── Electricity types ─────────────────────────────────────────
+
+export interface ElectricityConfig {
+  id:                     string
+  billingMode:            'SPLIT_EQUALLY' | 'FIXED_PER_TENANT' | 'PER_ROOM_UNITS'
+  meterType:              'SINGLE' | 'PER_FLOOR' | 'PER_ROOM'
+  fixedAmountPerTenant?:  number | null
+  perUnitRate?:           number | null
+  isActive:               boolean
+}
+
+export interface RoomReading {
+  roomId:     string
+  roomNumber: string
+  units?:     number | null
+  amount?:    number | null
+}
+
+export interface TenantDuePreview {
+  tenantId:       string
+  tenantName:     string
+  roomNumber:     string
+  bedLabel:       string
+  moveInDate:     string
+  daysInPeriod:   number
+  totalDays:      number
+  amount:         number
+  isPartialMonth: boolean
+}
+
+export interface BillPreview {
+  billingPeriodFrom: string
+  billingPeriodTo:   string
+  billingMode:       string
+  totalDays:         number
+  activeTenants:     number
+  totalAmount:       number
+  tenantDues:        TenantDuePreview[]
+}
+
+export interface ElectricityDue {
+  id:                  string
+  billId:              string
+  tenantId:            string
+  tenantName:          string
+  tenantPhone:         string
+  roomNumber:          string
+  billingPeriodFrom:   string
+  billingPeriodTo:     string
+  daysInPeriod:        number
+  totalDaysInPeriod:   number
+  amount:              number
+  status:              'PENDING' | 'PAID' | 'WAIVED' | 'EXCLUDED'
+  paidDate?:           string | null
+  paymentMode?:        string | null
+  referenceNo?:        string | null
+  notes?:              string | null
+}
+
+export interface ElectricityBill {
+  id:                string
+  billingPeriodFrom: string
+  billingPeriodTo:   string
+  billingMode:       string
+  totalAmount?:      number | null
+  totalDuesAmount?:  number | null
+  status:            'CONFIRMED' | 'PARTIALLY_PAID' | 'PAID'
+  notes?:            string | null
+  dues:              ElectricityDue[]
+}
+
+export interface ElectricityBillSummary {
+  id:                string
+  billingPeriodFrom: string
+  billingPeriodTo:   string
+  billingMode:       string
+  totalAmount?:      number | null
+  totalDuesAmount?:  number | null
+  status:            string
+  totalTenants:      number
+  paidTenants:       number
+  pendingTenants:    number
+}

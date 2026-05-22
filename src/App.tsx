@@ -26,7 +26,7 @@ import { BillingPage } from '@/pages/profile/BillingPage'
 import { ListingSetupPage } from '@/pages/ListingSetupPage/ListingSetupPage'
 import { PaymentSettingsPage } from '@/pages/PaymentSettings/PaymentSettingsPage'
 import { CheckinPage } from '@/pages/checkin/CheckinPage'
-
+import { ElectricityPage } from '@/pages/electricity/ElectricityPage'
 
 export default function App() {
   return (
@@ -72,6 +72,7 @@ export default function App() {
           <Route path="/profile"         element={<ProfilePage />} />
           <Route path="/billing"         element={<BillingPage />} />
           <Route path="/payment-settings" element={<PaymentSettingsPage />} />
+          <Route path="/electricity" element={<ElectricityPage />} />
           
         </Route>
 
