@@ -12,7 +12,7 @@ export function BottomNav() {
     { to: '/rooms', label: t("rooms"), icon: LayoutGrid },
     { to: '/tenants', label: t("users"), icon: Users },
     { to: '/payments', label: t("rent_reminder"), icon: CreditCard },
-    { to: '/profile', label: t("analytics"), icon: UserRound },
+    { to: '/profile', label: t("profile"), icon: UserRound },
   ];
 
   return (
