@@ -168,94 +168,102 @@ if (pills.has('VACANCY')) {
   ]
 
   return (
-    <div className="pb-24 overflow-x-hidden">
-      {/* =========================================
-          Responsive Filter Pills
-      ========================================= */}
+  <div className="w-full overflow-x-hidden pb-24">
+    {/* =========================================
+        Responsive Filter Pills
+    ========================================= */}
 
-     <div className="mb-5">
-  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar"
-    style={{ WebkitOverflowScrolling: 'touch' }}>
-          {pillDefs.map(({ id, label }) => {
-            const active = pills.has(id)
-
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => toggle(id)}
-                className={cn(
-                  'shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs sm:text-sm font-semibold transition-all',
-                  active
-                    ? 'border-primary bg-primaryLight text-primary'
-                    : 'border-border bg-surface text-textSecondary'
-                )}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* =========================================
-          Loading State
-      ========================================= */}
-
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton
-              key={i}
-              className="h-40 w-full rounded-xl"
-            />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        /**
-         * =========================================
-         * Empty State
-         * =========================================
-         */
-        <EmptyState
-          icon={LayoutGrid}
-          title="No rooms found"
-          description="Try changing filters or add a new room."
-          actionLabel="Add room"
-          onAction={() => navigate('/rooms/add')}
-        />
-      ) : (
-        /**
-         * =========================================
-         * Fully Responsive Room Grid
-         *
-         * Mobile → 1 column
-         * Small → 2 columns
-         * Medium → 3 columns
-         * Large → 4 columns
-         * =========================================
-         */
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((room) => (
-            <RoomCard
-              key={room.id}
-              room={room}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* =========================================
-          Floating Add Button
-      ========================================= */}
-
-      <Link
-        to="/rooms/add"
-        className="fixed bottom-28 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition hover:scale-105 lg:bottom-8"
-        aria-label="Add room"
+    <div className="mb-5 w-full overflow-hidden">
+      <div
+        className="
+          flex
+          w-full
+          gap-2
+          overflow-x-auto
+          overscroll-x-contain
+          pb-2
+        "
+        style={{
+          WebkitOverflowScrolling: 'touch',
+        }}
       >
-        <Plus className="h-7 w-7" />
-      </Link>
+        {pillDefs.map(({ id, label }) => {
+          const active = pills.has(id)
+
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => toggle(id)}
+              className={cn(
+                `
+                flex-none
+                whitespace-nowrap
+                rounded-full
+                border
+                px-3
+                py-2
+                text-xs
+                sm:px-4
+                sm:text-sm
+                font-semibold
+                transition-all
+                `,
+                active
+                  ? 'border-primary bg-primaryLight text-primary'
+                  : 'border-border bg-surface text-textSecondary'
+              )}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
     </div>
-  )
+
+    {/* =========================================
+        Loading State
+    ========================================= */}
+
+    {isLoading ? (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton
+            key={i}
+            className="h-40 w-full rounded-xl"
+          />
+        ))}
+      </div>
+    ) : filtered.length === 0 ? (
+      <EmptyState
+        icon={LayoutGrid}
+        title="No rooms found"
+        description="Try changing filters or add a new room."
+        actionLabel="Add room"
+        onAction={() => navigate('/rooms/add')}
+      />
+    ) : (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+        {filtered.map((room) => (
+          <RoomCard
+            key={room.id}
+            room={room}
+          />
+        ))}
+      </div>
+    )}
+
+    {/* =========================================
+        Floating Add Button
+    ========================================= */}
+
+    <Link
+      to="/rooms/add"
+      className="fixed bottom-28 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition hover:scale-105 lg:bottom-8"
+      aria-label="Add room"
+    >
+      <Plus className="h-7 w-7" />
+    </Link>
+  </div>
+)
 }
