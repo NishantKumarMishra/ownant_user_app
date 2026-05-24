@@ -32,6 +32,7 @@ import { Percent, BedDouble, AlertCircle, IndianRupee } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ListingBanner } from "@/components/listing/ListingBanner";
 import type { ActivityFeedItem } from "@/api/types";
+import { PropertyOverview } from "@/components/dashboard/PropertyOverview";
 
 // ── Avatar helpers ────────────────────────────────────────────
 function getInitials(name: string) {
@@ -455,6 +456,8 @@ hint={t("vs_expected")}
           )}
         </section>
       )}
+
+      <PropertyOverview />
 
       {/* ── 6-month chart ──────────────────────────────────── */}
       {trend.length > 0 && (
