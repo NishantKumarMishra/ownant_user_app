@@ -173,8 +173,9 @@ if (pills.has('VACANCY')) {
           Responsive Filter Pills
       ========================================= */}
 
-      <div className="-mx-4 mb-5 px-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+     <div className="mb-5">
+  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar"
+    style={{ WebkitOverflowScrolling: 'touch' }}>
           {pillDefs.map(({ id, label }) => {
             const active = pills.has(id)
 
