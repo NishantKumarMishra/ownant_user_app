@@ -457,7 +457,12 @@ hint={t("vs_expected")}
         </section>
       )}
 
-      <PropertyOverview />
+
+   {/* ── Property Overview Section ─────────────────────── */}
+{/* ── Property Overview ── */}
+<section className="w-full max-w-full overflow-hidden min-w-0 block">
+  <PropertyOverview />
+</section>
 
       {/* ── 6-month chart ──────────────────────────────────── */}
       {trend.length > 0 && (
