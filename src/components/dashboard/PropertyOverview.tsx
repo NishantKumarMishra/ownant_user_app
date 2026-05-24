@@ -1,8 +1,9 @@
 // src/components/dashboard/PropertyOverview.tsx
-// Drop this anywhere in DashboardPage.tsx with: <PropertyOverview />
+// Horizontal scrollable PG cards — one card per PG
+// Drop in DashboardPage with: <PropertyOverview />
 
 import { Link } from 'react-router-dom'
-import { ChevronRight, Users, BedDouble, TrendingUp, AlertCircle } from 'lucide-react'
+import { ChevronRight, Users, BedDouble, AlertCircle, TrendingUp, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDashboard } from '@/hooks/useAnalytics'
 import { usePgsList } from '@/hooks/usePgs'
@@ -12,36 +13,169 @@ function fmt(n: number) {
   return '₹' + Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n)
 }
 
-export function PropertyOverview() {
-  const { data: dashboard, isLoading } = useDashboard()
-  const { data: pgs }                  = usePgsList()
-  const { activePgId, activePgName }   = usePgStore()
-
-  // Find active PG summary
-  const activePg = pgs?.find(p => p.id === activePgId)
-
-  if (isLoading) {
-    return (
-      <div className="mb-5 space-y-3">
-        <div className="h-5 w-40 rounded-full bg-surface animate-pulse" />
-        <div className="h-36 w-full rounded-2xl bg-surface animate-pulse" />
-      </div>
-    )
-  }
-
-  if (!dashboard) return null
-
-  const { occupancy, collection, tenants } = dashboard
-
-  const occupancyPct = Math.round(occupancy.occupancyRate ?? 0)
-  const collectionPct = Math.round(collection.collectionRate ?? 0)
-
-  // Progress bar color
+// ── Single PG card ────────────────────────────────────────────
+function PgCard({
+  pgName,
+  city,
+  isActive,
+  occupiedBeds,
+  totalBeds,
+  occupancyPct,
+  activeTenants,
+  noticeTenants,
+  overdueCount,
+  monthLabel,
+  collected,
+}: {
+  pgName:        string
+  city?:         string
+  isActive:      boolean
+  occupiedBeds:  number
+  totalBeds:     number
+  occupancyPct:  number
+  activeTenants: number
+  noticeTenants: number
+  overdueCount:  number
+  collectionRate: number
+  monthLabel:    string
+  collected:     number
+}) {
   const barColor = occupancyPct >= 80
     ? 'bg-success'
     : occupancyPct >= 50
     ? 'bg-amber-400'
     : 'bg-danger'
+
+  const stats = [
+    {
+      icon:  <Users className="h-4 w-4" />,
+      bg:    'bg-primary/10',
+      color: 'text-primary',
+      label: 'Active Tenants',
+      value: activeTenants,
+      valueClass: 'text-textPrimary',
+    },
+    {
+      icon:  <Clock className="h-4 w-4" />,
+      bg:    'bg-amber-50',
+      color: 'text-amber-500',
+      label: 'Under Notice',
+      value: noticeTenants,
+      valueClass: noticeTenants > 0 ? 'text-amber-600' : 'text-textPrimary',
+    },
+    {
+      icon:  <AlertCircle className="h-4 w-4" />,
+      bg:    overdueCount > 0 ? 'bg-danger/10' : 'bg-success/10',
+      color: overdueCount > 0 ? 'text-danger' : 'text-success',
+      label: 'Pending Dues',
+      value: overdueCount > 0 ? `${overdueCount} overdue` : '₹0',
+      valueClass: overdueCount > 0 ? 'text-danger' : 'text-success',
+    },
+    {
+      icon:  <TrendingUp className="h-4 w-4" />,
+      bg:    'bg-success/10',
+      color: 'text-success',
+      label: `${monthLabel} Collection`,
+      value: fmt(collected),
+      valueClass: 'text-textPrimary',
+    },
+  ]
+
+  return (
+    <div className={cn(
+      'flex-shrink-0 w-72 rounded-2xl border bg-surface p-4 space-y-3',
+      isActive ? 'border-primary/40' : 'border-border'
+    )}>
+      {/* PG name + city */}
+      <div className="flex items-start justify-between">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-textPrimary truncate">{pgName}</p>
+          {city && <p className="text-xs text-textSecondary mt-0.5">{city}</p>}
+        </div>
+        <span className={cn(
+          'ml-2 flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full',
+          occupancyPct >= 80
+            ? 'bg-success/10 text-success'
+            : occupancyPct >= 50
+            ? 'bg-amber-50 text-amber-600'
+            : 'bg-danger/10 text-danger'
+        )}>
+          {occupancyPct}%
+        </span>
+      </div>
+
+      {/* Occupied beds + progress */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs text-textSecondary flex items-center gap-1">
+            <BedDouble className="h-3.5 w-3.5" /> Occupied Beds
+          </p>
+          <p className="text-xs font-bold text-textPrimary">
+            {occupiedBeds}/{totalBeds}
+          </p>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
+          <div
+            className={cn('h-full rounded-full transition-all', barColor)}
+            style={{ width: `${Math.min(occupancyPct, 100)}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="h-px bg-border" />
+
+      {/* Vertical stats */}
+      <div className="space-y-2.5">
+        {stats.map((s, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <div className={cn(
+              'h-8 w-8 rounded-xl flex items-center justify-center flex-shrink-0',
+              s.bg, s.color
+            )}>
+              {s.icon}
+            </div>
+            <p className="flex-1 text-xs text-textSecondary">{s.label}</p>
+            <p className={cn('text-xs font-bold', s.valueClass)}>
+              {s.value}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────
+export function PropertyOverview() {
+  const { data: dashboard, isLoading } = useDashboard()
+  const { data: pgs }                  = usePgsList()
+  const { activePgId }                 = usePgStore()
+
+  if (isLoading) {
+    return (
+      <div className="mb-5">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="h-5 w-40 rounded-full bg-surface animate-pulse" />
+          <div className="h-4 w-16 rounded-full bg-surface animate-pulse" />
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {[1, 2].map(i => (
+            <div key={i} className="h-64 w-72 flex-shrink-0 rounded-2xl bg-surface animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!dashboard || !pgs?.length) return null
+
+  const { occupancy, collection, tenants } = dashboard
+  const occupancyPct  = Math.round(occupancy.occupancyRate ?? 0)
+  const collectionPct = Math.round(collection.collectionRate ?? 0)
+  const monthLabel    = collection.monthYear
+    ? collection.monthYear.split('-').reverse().join(' ')
+    : "This Month"
 
   return (
     <div className="mb-5">
@@ -56,137 +190,52 @@ export function PropertyOverview() {
         </Link>
       </div>
 
-      {/* Main card */}
-      <div className="rounded-2xl border border-border bg-surface p-4 space-y-4">
-
-        {/* PG name + city */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-bold text-textPrimary">
-              {activePgName ?? activePg?.name ?? 'My PG'}
-            </p>
-            {activePg?.city && (
-              <p className="text-xs text-textSecondary mt-0.5">{activePg.city}</p>
-            )}
-          </div>
-          {/* Occupancy % badge */}
-          <span className={cn(
-            'text-xs font-bold px-2.5 py-1 rounded-full',
-            occupancyPct >= 80
-              ? 'bg-success/10 text-success'
-              : occupancyPct >= 50
-              ? 'bg-amber-50 text-amber-600'
-              : 'bg-danger/10 text-danger'
-          )}>
-            {occupancyPct}% full
-          </span>
-        </div>
-
-        {/* Occupied beds progress */}
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <p className="text-xs text-textSecondary flex items-center gap-1">
-              <BedDouble className="h-3.5 w-3.5" />
-              Occupied Beds
-            </p>
-            <p className="text-xs font-bold text-textPrimary">
-              {occupancy.occupiedBeds}/{occupancy.totalBeds}
-            </p>
-          </div>
-          <div className="h-2 w-full rounded-full bg-border overflow-hidden">
-            <div
-              className={cn('h-full rounded-full transition-all', barColor)}
-              style={{ width: `${occupancyPct}%` }}
-            />
-          </div>
-          <p className="text-[10px] text-textMuted mt-1">
-            {occupancy.vacantBeds} bed{occupancy.vacantBeds !== 1 ? 's' : ''} available
-          </p>
-        </div>
-
-        {/* Divider */}
-        <div className="h-px bg-border" />
-
-        {/* Stats row */}
-        <div className="grid grid-cols-2 gap-3">
-
-          {/* Active tenants */}
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Users className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-[10px] text-textSecondary">Active Tenants</p>
-              <p className="text-sm font-bold text-textPrimary">{tenants.activeTenants}</p>
-            </div>
-          </div>
-
-          {/* Collection rate */}
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
-              <TrendingUp className="h-4 w-4 text-success" />
-            </div>
-            <div>
-              <p className="text-[10px] text-textSecondary">Collection Rate</p>
-              <p className="text-sm font-bold text-textPrimary">{collectionPct}%</p>
-            </div>
-          </div>
-
-          {/* May's collection */}
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-amber-600">₹</span>
-            </div>
-            <div>
-              <p className="text-[10px] text-textSecondary">
-                {collection.monthYear?.replace('-', ' ') ?? 'This Month'}
-              </p>
-              <p className="text-sm font-bold text-textPrimary">
-                {fmt(collection.totalCollected)}
-              </p>
-            </div>
-          </div>
-
-          {/* Pending dues */}
-          <div className="flex items-center gap-2.5">
-            <div className={cn(
-              'h-8 w-8 rounded-xl flex items-center justify-center flex-shrink-0',
-              collection.overdueCount > 0 ? 'bg-danger/10' : 'bg-success/10'
-            )}>
-              <AlertCircle className={cn(
-                'h-4 w-4',
-                collection.overdueCount > 0 ? 'text-danger' : 'text-success'
-              )} />
-            </div>
-            <div>
-              <p className="text-[10px] text-textSecondary">Pending Dues</p>
-              <p className={cn(
-                'text-sm font-bold',
-                collection.overdueCount > 0 ? 'text-danger' : 'text-success'
-              )}>
-                {collection.overdueCount > 0
-                  ? `${collection.overdueCount} overdue`
-                  : '₹0 Clear ✓'
-                }
-              </p>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Notice tenants warning */}
-        {tenants.noticeTenants > 0 && (
-          <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
-            <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
-            <p className="text-xs text-amber-700">
-              <span className="font-semibold">{tenants.noticeTenants} tenant{tenants.noticeTenants > 1 ? 's' : ''}</span> on notice period
-            </p>
-            <Link to="/tenants" className="ml-auto text-xs font-semibold text-amber-700">
-              View
-            </Link>
-          </div>
-        )}
-
+      {/* Horizontal scroll — one card per PG */}
+      <div
+        className="flex gap-3 overflow-x-auto pb-2"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {pgs.map(pg => (
+          <PgCard
+            key={pg.id}
+            pgName={pg.name}
+            city={pg.city}
+            isActive={pg.id === activePgId}
+            // Active PG gets real data from dashboard
+            // Other PGs get data from PgSummary (limited)
+            occupiedBeds={
+              pg.id === activePgId
+                ? occupancy.occupiedBeds
+                : pg.occupiedBeds ?? 0
+            }
+            totalBeds={
+              pg.id === activePgId
+                ? occupancy.totalBeds
+                : pg.totalBeds ?? 0
+            }
+            occupancyPct={
+              pg.id === activePgId
+                ? occupancyPct
+                : Math.round(pg.occupancyPercent ?? 0)
+            }
+            activeTenants={
+              pg.id === activePgId ? tenants.activeTenants : 0
+            }
+            noticeTenants={
+              pg.id === activePgId ? tenants.noticeTenants : 0
+            }
+            overdueCount={
+              pg.id === activePgId ? collection.overdueCount : 0
+            }
+            collectionRate={
+              pg.id === activePgId ? collectionPct : 0
+            }
+            monthLabel={monthLabel}
+            collected={
+              pg.id === activePgId ? collection.totalCollected : 0
+            }
+          />
+        ))}
       </div>
     </div>
   )
