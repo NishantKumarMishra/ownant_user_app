@@ -168,7 +168,7 @@ if (pills.has('VACANCY')) {
   ]
 
   return (
-    <div className="pb-24">
+    <div className="pb-24 overflow-x-hidden">
       {/* =========================================
           Responsive Filter Pills
       ========================================= */}
@@ -251,7 +251,7 @@ if (pills.has('VACANCY')) {
 
       <Link
         to="/rooms/add"
-        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition hover:scale-105 lg:bottom-8"
+        className="fixed bottom-28 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition hover:scale-105 lg:bottom-8"
         aria-label="Add room"
       >
         <Plus className="h-7 w-7" />
