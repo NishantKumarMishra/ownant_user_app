@@ -17,7 +17,7 @@ export default defineConfig({
         description: 'Manage your PG the smart way',
 
         theme_color: '#2C6C28',
-        background_color: '#2C2D2E',
+        background_color: '#F5F4F0',
 
         display: 'standalone',
         orientation: 'portrait',
