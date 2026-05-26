@@ -21,6 +21,7 @@ import * as Collapsible from '@radix-ui/react-collapsible'
 import { useQueryClient } from '@tanstack/react-query'
 import { differenceInDays, parseISO, format } from 'date-fns'
 import type { PaymentItem } from '@/api/types'
+import { CheckinStatusCard } from '@/components/checkin/CheckinStatusCard'
 
 function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
@@ -320,6 +321,9 @@ export function TenantDetailPage() {
           </div>
         )}
       </div>
+      <div className="px-4 mb-4">
+  <CheckinStatusCard tenantId={t.id} />
+</div>
 
       {/* ── Notification logs ─────────────────────────────── */}
       <div className="px-4 mb-4">

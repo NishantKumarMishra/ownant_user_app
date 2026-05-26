@@ -32,6 +32,10 @@ import { Percent, BedDouble, AlertCircle, IndianRupee } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ListingBanner } from "@/components/listing/ListingBanner";
 import type { ActivityFeedItem } from "@/api/types";
+import { PendingCheckins } from '@/components/checkin/PendingCheckins'
+
+// Add after PropertyOverview section:
+
 
 
 // ── Avatar helpers ────────────────────────────────────────────
@@ -475,6 +479,7 @@ hint={t("vs_expected")}
           </div>
         </section>
       )}
+      <PendingCheckins />
 
       {/* ── Generate payments modal ────────────────────────── */}
       <Modal
