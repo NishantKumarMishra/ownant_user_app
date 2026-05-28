@@ -73,24 +73,25 @@ export function AddTenantPage() {
     if (selectedBed) setValue('monthlyRent', selectedBed.rentPerBed)
   }, [selectedBed, setValue])
 
-  const onSubmit = async (data: Form) => {
-    try {
-      await create.mutateAsync({
-        bedId: data.bedId,
-        name: data.name,
-        phone: data.phone,
-        email: data.email || undefined,
-        emergencyPhone: data.emergencyPhone,
-        emergencyName: data.emergencyName,
-        moveInDate: data.moveInDate,
-        monthlyRent: data.monthlyRent,
-        dueDay: data.dueDay,
-        occupation: data.occupation,
-        company: data.company,
-        idProofType: data.idProofType,
-        idProofNumber: data.idProofNumber,
-        notes: data.notes,
-      })
+ // TO — add || undefined to optional fields
+const onSubmit = async (data: Form) => {
+  try {
+    await create.mutateAsync({
+      bedId: data.bedId,
+      name: data.name,
+      phone: data.phone,
+      email:           data.email           || undefined,
+      emergencyPhone:  data.emergencyPhone   || undefined,
+      emergencyName:   data.emergencyName    || undefined,
+      moveInDate:      data.moveInDate,
+      monthlyRent:     data.monthlyRent,
+      dueDay:          data.dueDay,
+      occupation:      data.occupation       || undefined,
+      company:         data.company          || undefined,
+      idProofType:     data.idProofType      || undefined,  // ← fix
+      idProofNumber:   data.idProofNumber    || undefined,
+      notes:           data.notes            || undefined,
+    })
       navigate('/tenants')
     } catch (e) {
       handleApiError(e)
