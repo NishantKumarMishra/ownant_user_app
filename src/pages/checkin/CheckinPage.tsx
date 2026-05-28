@@ -7,32 +7,29 @@ import { useSearchParams } from 'react-router-dom'
 import {
   CheckCircle2, ChevronRight, Loader2, Upload,
   X, User, Phone, MapPin, FileText, PenLine,
-  Shield, Home, Calendar, Banknote, AlertCircle
+  Shield, Home, Calendar, Banknote, AlertCircle,
+  IndianRupee, RotateCcw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import api from '@/api/axios'
 
-// ── Constants ─────────────────────────────────────────────────
 const IK_PUBLIC_KEY = import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY as string
 const IK_UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload'
 
-// WHY use api (axios) instead of raw fetch:
-//   api already has VITE_API_BASE_URL as baseURL
-//   Works correctly in both dev (http://192.168.x.x) and prod (https://...)
-//   No HTTPS/HTTP mismatch issues
-
 // ── Types ─────────────────────────────────────────────────────
 interface CheckinInfo {
-  status:      string
-  pgName:      string
-  pgAddress:   string
-  pgCity:      string
-  tenantName:  string
-  roomNumber:  string
-  bedLabel:    string
-  moveInDate:  string
-  monthlyRent: number
-  expired:     boolean
+  status:          string
+  pgName:          string
+  pgAddress:       string
+  pgCity:          string
+  tenantName:      string
+  roomNumber:      string
+  bedLabel:        string
+  moveInDate:      string
+  monthlyRent:     number
+  securityDeposit: number   // ← NEW
+  advanceAmount:   number   // ← NEW
+  expired:         boolean
 }
 
 // ── Signature pad ─────────────────────────────────────────────
@@ -154,6 +151,65 @@ function PhotoUploadBox({ label, url, onUpload, loading }: {
   )
 }
 
+// ── Deposit Summary Card ──────────────────────────────────────
+function DepositCard({ info }: { info: CheckinInfo }) {
+  const hasDeposit  = (info.securityDeposit ?? 0) > 0
+  const hasAdvance  = (info.advanceAmount ?? 0) > 0
+  const total       = (info.securityDeposit ?? 0) + (info.advanceAmount ?? 0)
+
+  if (!hasDeposit && !hasAdvance) return null
+
+  return (
+    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <IndianRupee className="h-4 w-4 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-textPrimary">Amount Collected at Move-in</p>
+          <p className="text-xs text-textSecondary">Paid to your PG owner</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {hasDeposit && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-textSecondary">Security Deposit</p>
+            <p className="text-sm font-semibold text-textPrimary">
+              ₹{(info.securityDeposit).toLocaleString('en-IN')}
+            </p>
+          </div>
+        )}
+        {hasAdvance && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-textSecondary">Advance Amount</p>
+            <p className="text-sm font-semibold text-textPrimary">
+              ₹{(info.advanceAmount).toLocaleString('en-IN')}
+            </p>
+          </div>
+        )}
+        <div className="h-px bg-primary/10" />
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold text-textPrimary">Total Collected</p>
+          <p className="text-base font-bold text-primary">
+            ₹{total.toLocaleString('en-IN')}
+          </p>
+        </div>
+      </div>
+
+      {hasDeposit && (
+        <div className="flex items-start gap-2 rounded-xl bg-white/60 px-3 py-2">
+          <RotateCcw className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-primary">
+            Security deposit of ₹{(info.securityDeposit).toLocaleString('en-IN')} is
+            refundable when you vacate, after deducting any dues or damages.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ═══════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ═══════════════════════════════════════════════════════════════
@@ -183,16 +239,9 @@ export function CheckinPage() {
   const [completed,    setCompleted]    = useState(false)
 
   // ── Load checkin info ─────────────────────────────────────────
-  // Uses api axios — baseURL from VITE_API_BASE_URL (works in prod)
-  // /public/checkin/* is mapped in backend at root level not /api/v1
-  // So we use the raw baseURL without /api/v1 suffix
   useEffect(() => {
     if (!token) { setError('Invalid link'); setLoading(false); return }
-
-    // api.defaults.baseURL = http://x.x.x.x:8080/api/v1
-    // checkin is at /public/checkin — strip /api/v1
     const baseUrl = (api.defaults.baseURL ?? '').replace('/api/v1', '')
-
     fetch(`${baseUrl}/public/checkin/${token}`)
       .then(r => r.json())
       .then(d => {
@@ -209,18 +258,14 @@ export function CheckinPage() {
   }, [token])
 
   // ── ImageKit upload ───────────────────────────────────────────
-  // Step 1: Get auth from backend via api axios (handles prod URL correctly)
-  // Step 2: Upload directly to ImageKit with signed token
   const handleUpload = async (file: File, side: 'front' | 'back') => {
     const setUploading = side === 'front' ? setUploadingFront : setUploadingBack
     const setUrl       = side === 'front' ? setIdFrontUrl     : setIdBackUrl
     setUploading(true)
     setError('')
     try {
-      // Uses api axios — baseURL already correct for prod/dev
       const authRes  = await api.get('/public/imagekit/auth')
       const auth     = authRes.data?.data ?? authRes.data
-
       const formData = new FormData()
       formData.append('file',              file)
       formData.append('publicKey',         IK_PUBLIC_KEY)
@@ -230,7 +275,6 @@ export function CheckinPage() {
       formData.append('signature',         auth.signature)
       formData.append('expire',            String(auth.expire))
       formData.append('token',             auth.token)
-
       const res  = await fetch(IK_UPLOAD_URL, { method: 'POST', body: formData })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message ?? 'Upload failed')
@@ -335,10 +379,10 @@ export function CheckinPage() {
           </div>
           <div className="bg-surface border border-border rounded-2xl p-4 text-left space-y-3">
             {[
-              { icon: Home,     label: 'Property',     value: info?.pgName },
-              { icon: FileText, label: 'Room & Bed',   value: `Room ${info?.roomNumber} · Bed ${info?.bedLabel}` },
-              { icon: Calendar, label: 'Move-in Date', value: info?.moveInDate },
-              { icon: Banknote, label: 'Monthly Rent', value: `₹${info?.monthlyRent}` },
+              { icon: Home,       label: 'Property',     value: info?.pgName },
+              { icon: FileText,   label: 'Room & Bed',   value: `Room ${info?.roomNumber} · Bed ${info?.bedLabel}` },
+              { icon: Calendar,   label: 'Move-in Date', value: info?.moveInDate },
+              { icon: Banknote,   label: 'Monthly Rent', value: `₹${info?.monthlyRent}` },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-xl bg-primaryLight flex items-center justify-center flex-shrink-0">
@@ -350,6 +394,25 @@ export function CheckinPage() {
                 </div>
               </div>
             ))}
+
+            {/* ── Deposit summary in completion screen ── */}
+            {info && ((info.securityDeposit ?? 0) > 0 || (info.advanceAmount ?? 0) > 0) && (
+              <>
+                <div className="h-px bg-border" />
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <IndianRupee className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-textSecondary">Total Deposited</p>
+                    <p className="text-sm font-semibold text-primary">
+                      ₹{((info.securityDeposit ?? 0) + (info.advanceAmount ?? 0)).toLocaleString('en-IN')}
+                      <span className="text-xs font-normal text-textMuted ml-1">(refundable)</span>
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
           <p className="text-xs text-textMuted">~ Powered by Ownant</p>
         </div>
@@ -434,6 +497,10 @@ export function CheckinPage() {
                 </p>
               </div>
             </div>
+
+            {/* ── Deposit Card ────────────────────────────── */}
+            <DepositCard info={info} />
+
             <button
               onClick={() => { setError(''); setStep(1) }}
               className="w-full bg-primary text-white rounded-2xl py-4 font-bold text-base flex items-center justify-center gap-2"
@@ -550,6 +617,12 @@ export function CheckinPage() {
                 <p><span className="font-semibold text-textPrimary">Move-in:</span> {info.moveInDate}</p>
                 <p><span className="font-semibold text-textPrimary">Duration:</span> 11 months</p>
                 <p><span className="font-semibold text-textPrimary">Rent:</span> ₹{info.monthlyRent}/month</p>
+                {(info.securityDeposit ?? 0) > 0 && (
+                  <p><span className="font-semibold text-textPrimary">Security Deposit:</span> ₹{info.securityDeposit} (refundable)</p>
+                )}
+                {(info.advanceAmount ?? 0) > 0 && (
+                  <p><span className="font-semibold text-textPrimary">Advance Paid:</span> ₹{info.advanceAmount}</p>
+                )}
                 <p><span className="font-semibold text-textPrimary">Lock-in:</span> 6 months</p>
                 <p><span className="font-semibold text-textPrimary">Notice Period:</span> 30 days</p>
               </div>
