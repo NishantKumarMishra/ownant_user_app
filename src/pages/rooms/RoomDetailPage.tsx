@@ -55,7 +55,7 @@ export function RoomDetailPage() {
       </div>
 
       <div className="flex gap-2">
-        <Button variant="secondary" size="sm" type="button" disabled>
+        <Button variant="secondary" size="sm" type="button" >
           <Pencil className="h-4 w-4" />
           Edit
         </Button>
