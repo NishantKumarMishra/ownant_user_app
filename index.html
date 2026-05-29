@@ -3,12 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/icon-192.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- ✅ FIXED: single viewport tag, prevents zoom-out on mobile -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+
+    <!-- ✅ FIXED: only one theme-color tag -->
     <meta name="theme-color" content="#0F6E56" />
+
     <link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#2C6C28" />
     <title>OWNANT</title>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- ✅ ADDED: prevents horizontal overflow globally -->
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body, #root {
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+        -webkit-text-size-adjust: 100%; /* prevents iOS font scaling */
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
