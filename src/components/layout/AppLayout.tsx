@@ -15,7 +15,7 @@ export function AppLayout() {
       {/* Sidebar (desktop only) */}
       <SidebarNav />
 
-      <div className="flex min-h-svh flex-1 flex-col pb-24 lg:pb-0">
+      <div className="flex min-h-svh flex-1 flex-col pb-24 lg:pb-0 [&:has(~nav)]:pb-24">
         
         {/* Top */}
         <TopBar />

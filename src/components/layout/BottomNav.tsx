@@ -1,19 +1,28 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { CreditCard, Home, LayoutGrid, UserRound, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTranslation } from "react-i18next";
 
-export function BottomNav() {
+// Pages where bottom nav should be hidden
+const HIDE_ON = [
+  '/tenants/add',
+  '/tenants/new',
+]
 
-  const { t } = useTranslation();
+export function BottomNav() {
+  const { t } = useTranslation()
+  const { pathname } = useLocation()
+
+  // Hide on specific pages
+  if (HIDE_ON.some(p => pathname.startsWith(p))) return null
 
   const items = [
-    { to: '/dashboard', label: t("dashboard"), icon: Home },
-    { to: '/rooms', label: t("rooms"), icon: LayoutGrid },
-    { to: '/tenants', label: t("users"), icon: Users },
-    { to: '/payments', label: t("rent_reminder"), icon: CreditCard },
-    { to: '/profile', label: t("profile"), icon: UserRound },
-  ];
+    { to: '/dashboard',  label: t("dashboard"),      icon: Home        },
+    { to: '/rooms',      label: t("rooms"),           icon: LayoutGrid  },
+    { to: '/tenants',    label: t("users"),           icon: Users       },
+    { to: '/payments',   label: t("rent_reminder"),   icon: CreditCard  },
+    { to: '/profile',    label: t("profile"),         icon: UserRound   },
+  ]
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface lg:hidden">
@@ -33,12 +42,10 @@ export function BottomNav() {
                 <>
                   <span className="relative">
                     <Icon className="h-5 w-5" />
-
-                    {isActive ? (
+                    {isActive && (
                       <span className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
-                    ) : null}
+                    )}
                   </span>
-
                   {label}
                 </>
               )}

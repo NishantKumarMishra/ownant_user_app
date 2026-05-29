@@ -97,6 +97,9 @@ export interface VacantBedOption {
   sharingType: number
   rentPerBed: number
   isAc: boolean
+  pgId: string
+  pgName: string
+  isOccupied: boolean
 }
 
 export interface TenantBedInfo {
@@ -157,6 +160,23 @@ export interface TenantDetail extends TenantListItem {
     sharingType: number
     isAc: boolean
   }
+
+  // ── Security Deposit ──────────────────────────────────────
+  securityDeposit?:   number | null
+  advanceAmount?:     number | null
+  depositPaidDate?:   string | null
+  depositRefunded?:   boolean
+  depositRefundDate?: string | null
+  depositNotes?:      string | null
+
+  // ── Stay Details ──────────────────────────────────────────
+  stayType?:          string | null   // LONG / SHORT
+  lockInPeriod?:      number
+  noticePeriod?:      number
+  agreementPeriod?:   number
+  tenantType?:        string | null
+  referredBy?:        string | null
+  moveOutExpected?:   string | null
 }
 
 export interface PaymentItem {
