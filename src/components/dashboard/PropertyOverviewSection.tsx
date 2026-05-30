@@ -7,22 +7,22 @@ import { PropertyCard } from './PropertyCard'
 
 function CardSkeleton() {
   return (
-    <div className="flex-shrink-0 w-[88vw] max-w-sm bg-surface rounded-2xl border border-border p-5 flex flex-col gap-4 animate-pulse">
+    <div className="flex-shrink-0 w-[88vw] max-w-sm bg-gray-100 rounded-2xl p-5 flex flex-col gap-4 animate-pulse">
       <div className="flex flex-col gap-1.5">
         <div className="h-5 w-36 bg-gray-200 rounded" />
-        <div className="h-3 w-48 bg-gray-100 rounded" />
+        <div className="h-3 w-48 bg-gray-200 rounded" />
       </div>
-      <div className="bg-background rounded-xl px-4 py-3 flex flex-col gap-2">
+      <div className="bg-gray-200 rounded-xl px-4 py-3 flex flex-col gap-2">
         <div className="flex justify-between">
-          <div className="h-3 w-24 bg-gray-200 rounded" />
-          <div className="h-3 w-8 bg-gray-200 rounded" />
+          <div className="h-3 w-24 bg-gray-300 rounded" />
+          <div className="h-3 w-8 bg-gray-300 rounded" />
         </div>
-        <div className="h-2 w-full bg-gray-200 rounded-full" />
+        <div className="h-2 w-full bg-gray-300 rounded-full" />
       </div>
       {[1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-gray-200 flex-shrink-0" />
-          <div className="flex-1 h-3 bg-gray-100 rounded" />
+          <div className="flex-1 h-3 bg-gray-200 rounded" />
           <div className="h-3 w-6 bg-gray-200 rounded" />
         </div>
       ))}
@@ -35,26 +35,22 @@ export function PropertyOverviewSection() {
   const overview = data?.data
 
   return (
-    <section className="flex flex-col gap-3 w-full">
+    // White wrapper box — breaks out of dashboard px-4 with -mx-4
+    <section className="-mx-4 bg-white px-4 py-4 flex flex-col gap-4">
 
-      {/* Header — no extra padding, inherits from dashboard px-4 */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-textPrimary">Property Overview</h2>
+        <h2 className="text-sm font-semibold text-textPrimary mb-3">Property Overview</h2>
         <Link
           to="/properties"
-          className="flex items-center gap-1 text-sm text-textSecondary border border-border rounded-lg px-3 py-1.5"
+          className="flex items-center gap-1 text-sm text-textSecondary border border-gray-200 rounded-lg px-3 py-1.5"
         >
           View All
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
-      {/* 
-        Break out of the dashboard's px-4 with -mx-4,
-        then restore left indent with pl-4 so cards start
-        at the same left edge as the header text above.
-        pr-4 gives breathing room after the last card.
-      */}
+      {/* Scrollable cards — break out of section px-4 then restore */}
       <div className="-mx-4 flex gap-3 overflow-x-auto no-scrollbar pl-4 pr-4 pb-1">
         {isLoading && (
           <>
