@@ -5,7 +5,6 @@ import { ChevronRight } from 'lucide-react'
 import { usePropertyOverview } from '@/hooks/usePropertyOverview'
 import { PropertyCard } from './PropertyCard'
 
-// ── Skeleton ─────────────────────────────────────────────────
 function CardSkeleton() {
   return (
     <div className="flex-shrink-0 w-[88vw] max-w-sm bg-surface rounded-2xl border border-border p-5 flex flex-col gap-4 animate-pulse">
@@ -31,7 +30,6 @@ function CardSkeleton() {
   )
 }
 
-// ── Section ───────────────────────────────────────────────────
 export function PropertyOverviewSection() {
   const { data, isLoading, isError } = usePropertyOverview()
   const overview = data?.data
@@ -39,8 +37,8 @@ export function PropertyOverviewSection() {
   return (
     <section className="flex flex-col gap-3 w-full">
 
-      {/* Header — stays padded */}
-      <div className="flex items-center justify-between px-4">
+      {/* Header — no extra padding, inherits from dashboard px-4 */}
+      <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-textPrimary">Property Overview</h2>
         <Link
           to="/properties"
@@ -51,8 +49,13 @@ export function PropertyOverviewSection() {
         </Link>
       </div>
 
-      {/* Cards — no px, first card carries pl-4, last card carries pr-4 via gap + overflow */}
-      <div className="flex gap-3 overflow-x-auto no-scrollbar pl-4 pr-4 pb-1">
+      {/* 
+        Break out of the dashboard's px-4 with -mx-4,
+        then restore left indent with pl-4 so cards start
+        at the same left edge as the header text above.
+        pr-4 gives breathing room after the last card.
+      */}
+      <div className="-mx-4 flex gap-3 overflow-x-auto no-scrollbar pl-4 pr-4 pb-1">
         {isLoading && (
           <>
             <CardSkeleton />

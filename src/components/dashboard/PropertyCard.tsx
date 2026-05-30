@@ -52,6 +52,7 @@ const STAT_ROWS = [
     isCurrency: true,
   },
 ]
+
 export function PropertyCard({ property }: PropertyCardProps) {
   const {
     pgId,
@@ -83,7 +84,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }
 
   return (
-    <div className="flex-shrink-0 w-[88vw] max-w-sm bg-surface rounded-2xl border border-border p-5 flex flex-col gap-4 shadow-sm">
+    <div className="flex-shrink-0 w-[88vw] max-w-sm bg-white rounded-2xl border border-gray-200 p-5 flex flex-col gap-4">
 
       {/* ── Header: name + ID ── */}
       <div>
@@ -103,7 +104,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
       </div>
 
       {/* ── Occupied Beds box ── */}
-      <div className="bg-background rounded-xl px-4 py-3">
+      <div className="bg-gray-100 rounded-xl px-4 py-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-textSecondary">Occupied Beds</span>
           <span className="text-sm font-bold text-textPrimary">
