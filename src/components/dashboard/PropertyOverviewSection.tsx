@@ -40,7 +40,7 @@ export function PropertyOverviewSection() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-textPrimary mb-3">Property Overview</h2>
+        <h2 className="text-sm font-bold text-textPrimary mb-3">Property Overview 🏡</h2>
         <Link
           to="/properties"
           className="flex items-center gap-1 text-sm text-textSecondary border border-gray-200 rounded-lg px-3 py-1.5"

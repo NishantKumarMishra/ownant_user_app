@@ -88,7 +88,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
       {/* ── Header: name + ID ── */}
       <div>
-        <p className="text-lg font-bold text-textPrimary">{pgName}</p>
+        <p className="text-lg font-bold text-textPrimary">{pgName} 🏠</p>
         <div className="flex items-center gap-1.5 mt-1">
           <p className="text-xs text-textTertiary">
             Ownant Id: <span className="font-medium text-textSecondary">{shortId}</span>

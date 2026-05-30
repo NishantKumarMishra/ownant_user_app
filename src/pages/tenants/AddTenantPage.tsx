@@ -588,7 +588,13 @@ export function AddTenantPage() {
             )}
           </div>
 
-      
+          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <InlineRow label="Stay Type">
+              <TogglePills
+                options={[{ label: 'Long', value: 'LONG' }, { label: 'Short', value: 'SHORT' }]}
+                value={stayType} onChange={v => setValue('stayType', v as 'LONG' | 'SHORT')} />
+            </InlineRow>
+          </div>
 
         </div>
 
@@ -607,11 +613,34 @@ export function AddTenantPage() {
             <InlineRow label="Move-in" required>
               <div className="flex items-center gap-2">
                 <input type="date" value={moveInDate}
-                  onChange={e => setValue('moveInDate', e.target.value)}
+                  onChange={e => {
+                    setValue('moveInDate', e.target.value)
+                    const day = new Date(e.target.value).getDate()
+                    if (day) setValue('dueDay', Math.min(day, 28))
+                  }}
                   className="text-[13px] text-gray-800 bg-transparent outline-none text-right" />
                 <CalendarIcon />
               </div>
             </InlineRow>
+
+            <InlineRow label="Due Day">
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] text-gray-400">Day</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={28}
+                  value={dueDay}
+                  onChange={e => {
+                    const v = Math.min(28, Math.max(1, Number(e.target.value)))
+                    setValue('dueDay', v)
+                  }}
+                  className="text-[13px] font-semibold text-gray-800 bg-gray-100 rounded-lg px-2 py-1 w-14 text-center outline-none"
+                />
+                <span className="text-[12px] text-gray-400">of every month</span>
+              </div>
+            </InlineRow>
+
             <InlineRow label="Move-out">
               <button type="button" onClick={() => setShowMoveOut(true)}
                 className="flex items-center gap-2 text-[13px] text-gray-800">
@@ -658,11 +687,9 @@ export function AddTenantPage() {
               </span>
             </InlineRow>
             <InlineRow label="Add Rent On">
-              <button type="button" onClick={() => setShowDueDay(true)}
-                className="flex items-center gap-1 text-[13px] font-semibold text-gray-800">
-                {dueDay === 1 ? '1st of month' : `${dueDay}th of month`}
-                <ChevronDown className="h-4 w-4 text-[var(--primary,#2C6C28)]" />
-              </button>
+              <span className="text-[13px] font-semibold text-gray-800">
+                {dueDay === 1 ? '1st' : dueDay === 2 ? '2nd' : dueDay === 3 ? '3rd' : `${dueDay}th`} of month
+              </span>
             </InlineRow>
             <InlineRow label="Fixed Rent" error={errors.monthlyRent?.message}>
               <InlineAmount value={monthlyRent} onChange={v => setValue('monthlyRent', Number(v))} />

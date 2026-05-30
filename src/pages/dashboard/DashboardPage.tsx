@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 import { ListingBanner } from "@/components/listing/ListingBanner";
 import type { ActivityFeedItem } from "@/api/types";
 import { PendingCheckins } from '@/components/checkin/PendingCheckins'
-
+import { DashboardFooter } from '@/components/dashboard/DashboardFooter'
 // ── Avatar helpers ────────────────────────────────────────────
 function getInitials(name: string) {
   return name
@@ -81,16 +81,24 @@ function MetricCard({
   danger?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-2xl border p-4",
-        danger ? "border-danger/20 bg-dangerLight" : "border-border bg-surface",
-      )}
-    >
+   <div
+  className={cn("rounded-2xl p-4", danger ? "border border-danger/20" : "")}
+  style={{
+    background: danger
+      ? "rgba(255,59,48,0.06)"
+      : "rgba(200,210,205,0.25)",
+    backdropFilter: "blur(24px) saturate(150%)",
+    WebkitBackdropFilter: "blur(24px) saturate(150%)",
+    border: danger
+      ? undefined
+      : "1px solid rgba(255,255,255,0.35)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 16px rgba(0,0,0,0.12)",
+  }}
+>
       <div className="flex items-center justify-between mb-2">
         <p
           className={cn(
-            "text-xs font-medium",
+            "text-xs font-bold text-textSecondary uppercase tracking-wide",
             danger ? "text-danger/70" : "text-textSecondary",
           )}
         >
@@ -98,7 +106,7 @@ function MetricCard({
         </p>
         <span
           className={cn(
-            "opacity-40",
+            "opacity-60",
             danger ? "text-danger" : "text-textSecondary",
           )}
         >
@@ -166,7 +174,7 @@ export function DashboardPage() {
   const monthYear = format(new Date(), "yyyy-MM");
 
   const { data: pendingPayments = [] } = usePaymentsList("PENDING", monthYear);
-  const upcomingDues = pendingPayments.filter((p) => isDueSoon(p)).slice(0, 6);
+  const upcomingDues = pendingPayments.filter((p) => isDueSoon(p)).slice(0, 5);
 
   const { data: paidPayments = [] } = usePaymentsList("PAID", monthYear);
 
@@ -239,7 +247,7 @@ export function DashboardPage() {
 
 
       {/* ── Overdue alert ─────────────────────────────────── */}
-      {overdue > 0 && (
+      {/* {overdue > 0 && (
         <Link
           to="/payments?filter=overdue"
           className="flex items-center justify-between rounded-2xl border border-danger/20 bg-dangerLight px-4 py-3"
@@ -249,10 +257,47 @@ export function DashboardPage() {
           </p>
           <ChevronRight className="h-4 w-4 text-danger flex-shrink-0" />
         </Link>
-      )}
+      )} */}
 
       {/* ── Metric cards ──────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3">
+      <section
+        className="-mx-4 px-4 py-4 flex flex-col gap-3"
+        style={{ background: "linear-gradient(135deg, #EAF3E9 0%, #f5faf3 60%, #ffffff 100%)" }}
+      >
+        <span className="text-sm font-semibold text-textPrimary mb-3">{t("LeaderBoard 🏆")}</span>
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard
+            label={t("collection_rate")}
+            value={`${Math.round(collectionRate)}%`}
+            hint={t("vs Expected")}
+            icon={<Percent className="h-4 w-4" />}
+          />
+          <MetricCard
+            label={t("beds_occupied")}
+            value={`${occupiedBeds}/${totalBeds}`}
+            hint={`${totalBeds - occupiedBeds} ${t("available")}`}
+            icon={<BedDouble className="h-4 w-4" />}
+          />
+          <MetricCard
+            label={t("overdue")}
+            value={String(overdue)}
+            hint={overdue > 0 ? t("Need Collection") : t("All Clear")}
+            icon={<AlertCircle className="h-4 w-4" />}
+            danger={overdue > 0}
+          />
+          <MetricCard
+            label={t("this_month")}
+            value={fmtINR(revenue)}
+            hint={`Expected ${fmtINR(expectedRev)}`}
+            icon={<IndianRupee className="h-4 w-4" />}
+          />
+        </div>
+      </section>
+ 
+
+      
+      
+      {/* <div className="grid grid-cols-2 gap-3">
         <MetricCard
           label={t("collection_rate")}
           value={`${Math.round(collectionRate)}%`}
@@ -278,17 +323,86 @@ export function DashboardPage() {
           hint={`Expected ${fmtINR(expectedRev)}`}
           icon={<IndianRupee className="h-4 w-4" />}
         />
-      </div>
+      </div> */}
 
       {/* ── Upcoming dues ─────────────────────────────────── */}
+       {/* ── Upcoming dues ─────────────────────────────────── */}
       {upcomingDues.length > 0 && (
+        <section className="-mx-4 bg-white px-4 py-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-textPrimary">
+              {t("Fast Collections 💸")}
+            </h2>
+            <Link to="/payments" className="text-xs font-medium text-primary">
+              {t("View All ->")}
+            </Link>
+          </div>
+ 
+          <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4">
+            {upcomingDues.map((p) => {
+              const name = p.tenantName ?? "Tenant";
+              const daysLeft = differenceInDays(
+                parseISO(p.dueDate!),
+                new Date(),
+              );
+              const dueLabel =
+                daysLeft === 0
+                  ? "Due today"
+                  : daysLeft === 1
+                    ? "Due tomorrow"
+                    : format(parseISO(p.dueDate!), "MMM d");
+ 
+              return (
+                <Link
+                  key={p.id}
+                  to={`/payments/${p.id}`}
+                  className="flex-shrink-0 w-44 rounded-2xl border border-border bg-surface p-4 hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div
+                      className={cn(
+                        "h-9 w-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0",
+                        avatarColor(name),
+                      )}
+                    >
+                      {getInitials(name)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-textPrimary truncate">
+                        {name}
+                      </p>
+                      <p className="text-xs text-textSecondary">
+                        {p.roomNumber ? `Room ${p.roomNumber}` : "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-base font-bold text-textPrimary">
+                        {fmtINR(p.amountDue)}
+                      </p>
+                      <p className="text-xs text-textSecondary mt-0.5">
+                        {dueLabel}
+                      </p>
+                    </div>
+                    <div className="h-8 w-8 rounded-xl bg-successLight flex items-center justify-center flex-shrink-0">
+                      <MessageCircle className="h-3.5 w-3.5 text-success" />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+      {/* {upcomingDues.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-textPrimary">
-              {t("upcoming_dues")}
+              {t("Fast Collections")} 
             </h2>
             <Link to="/payments" className="text-xs font-medium text-primary">
-              {t("next_2_days")}
+              {t("view all ->")}
             </Link>
           </div>
 
@@ -348,10 +462,78 @@ export function DashboardPage() {
             })}
           </div>
         </section>
-      )}
+      )} */}
 
       {/* ── Quick actions ──────────────────────────────────── */}
-      <section>
+      <section className="-mx-4 bg-white px-4 py-4 flex flex-col gap-4">
+        <h2 className="text-sm font-bold text-textPrimary">
+          {t("Quick Actions 🚀")}
+        </h2>
+        <div className="grid grid-cols-4 gap-3">
+          <Link
+            to="/tenants/add"
+            className="flex flex-col items-center gap-2 py-4 px-1"
+          >
+            <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+              <UserPlus className="h-5 w-5 text-blue-600" />
+            </div>
+            <span className="text-[10px] font-bold text-textSecondary text-center leading-tight">
+              {t("add_tenant")}
+            </span>
+          </Link>
+ 
+          <Link
+            to="/rooms"
+            className="flex flex-col items-center gap-2 py-4 px-1"
+          >
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+              <Grid3x3 className="h-5 w-5 text-emerald-600" />
+            </div>
+            <span className="text-[10px] font-bold text-textSecondary text-center leading-tight">
+              {t("View Rooms")}
+            </span>
+          </Link>
+ 
+          <button
+            type="button"
+            disabled={reminders.isPending}
+            onClick={async () => {
+              try {
+                const r = await reminders.mutateAsync();
+                toast.success(`Sent ${r.sent}, skipped ${r.skipped}`);
+              } catch (e) {
+                handleApiError(e);
+              }
+            }}
+            className="flex flex-col items-center gap-2 py-4 px-1 disabled:opacity-60"
+          >
+            <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center">
+              {reminders.isPending ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+              ) : (
+                <Bell className="h-5 w-5 text-violet-600" />
+              )}
+            </div>
+            <span className="text-[10px] font-bold text-textSecondary text-center leading-tight">
+              {reminders.isPending ? "Sending…" : `${t("send_reminder")}`}
+            </span>
+          </button>
+ 
+          <Link
+            to="/analytics"
+            className="flex flex-col items-center gap-2 py-4 px-1"
+          >
+            <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
+              <BarChart3 className="h-5 w-5 text-amber-600" />
+            </div>
+            <span className="text-[10px] font-bold text-textSecondary text-center leading-tight">
+              {t("Reports")}
+            </span>
+          </Link>
+        </div>
+      </section>
+      
+      {/* <section>
         <h2 className="text-sm font-semibold text-textPrimary mb-3">
           {t("quick_actions")}
         </h2>
@@ -417,7 +599,7 @@ export function DashboardPage() {
             </span>
           </Link>
         </div>
-      </section>
+      </section> */}
 
             {/* ── Property Overview ─────────────────────────────── */}
       <PropertyOverviewSection />  {/* ← ADD */}
@@ -469,6 +651,9 @@ export function DashboardPage() {
       )}
 
       <PendingCheckins />
+
+      {/* Footer */}
+       <DashboardFooter />
 
       {/* ── Generate payments modal ────────────────────────── */}
       <Modal
