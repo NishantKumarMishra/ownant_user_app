@@ -11,6 +11,7 @@ export const ENDPOINTS = {
   PGS: '/pgs',
   PG_BY_ID: (id: string) => `/pgs/${id}`,
   SWITCH_PG: (id: string) => `/pgs/${id}/switch`,
+  PROPERTY_OVERVIEW: '/pgs/overview',
 
   ROOMS: '/rooms',
   ROOMS_BULK: '/rooms/bulk',
@@ -62,6 +63,8 @@ PAYMENT_SETTINGS_PREVIEW: '/payment-settings/upi/preview',
   CHECKOUT:            '/billing/checkout',
   VERIFY_PAYMENT:      '/billing/verify-payment',
   CANCEL_SUBSCRIPTION: '/billing/cancel',
+
+  
 
   // Add these to endpoints.ts
 

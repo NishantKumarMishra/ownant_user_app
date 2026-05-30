@@ -509,3 +509,37 @@ export interface ElectricityBillSummary {
   paidTenants:       number
   pendingTenants:    number
 }
+
+// src/types/propertyOverview.types.ts
+
+export interface PropertyOverviewItem {
+  pgId: string
+  pgName: string
+  city: string
+  isActive: boolean
+  totalBeds: number
+  occupiedBeds: number
+  vacantBeds: number
+  occupancyRate: number
+  activeTenants: number
+  noticeTenants: number
+  pendingDues: number
+  monthCollection: number
+  totalExpected: number
+}
+
+export interface PropertyOverviewSummary {
+  totalPgs: number
+  totalBeds: number
+  totalActiveTenants: number
+  totalPendingDues: number
+  totalMonthCollection: number
+}
+
+export interface PropertyOverviewData extends PropertyOverviewSummary {
+  properties: PropertyOverviewItem[]
+}
+
+export interface PropertyOverviewResponse {
+  data: PropertyOverviewData
+}

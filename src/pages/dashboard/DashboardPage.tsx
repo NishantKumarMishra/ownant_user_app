@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { CollectionChart } from "@/components/dashboard/CollectionChart";
+import { PropertyOverviewSection } from "@/components/dashboard/PropertyOverviewSection"; // ← ADD
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Modal } from "@/components/ui/Modal";
@@ -33,10 +34,6 @@ import { cn } from "@/lib/utils";
 import { ListingBanner } from "@/components/listing/ListingBanner";
 import type { ActivityFeedItem } from "@/api/types";
 import { PendingCheckins } from '@/components/checkin/PendingCheckins'
-
-// Add after PropertyOverview section:
-
-
 
 // ── Avatar helpers ────────────────────────────────────────────
 function getInitials(name: string) {
@@ -158,7 +155,6 @@ function ActivityItem({ item }: { item: ActivityFeedItem }) {
 
 // ── Main Page ─────────────────────────────────────────────────
 export function DashboardPage() {
-  // 🌍 Translation
   const { t } = useTranslation();
 
   const { data, isLoading, isError, refetch } = useDashboard();
@@ -169,23 +165,18 @@ export function DashboardPage() {
   const reminders = useTriggerReminders();
   const monthYear = format(new Date(), "yyyy-MM");
 
-  // Upcoming dues — pending payments due within 2 days
   const { data: pendingPayments = [] } = usePaymentsList("PENDING", monthYear);
   const upcomingDues = pendingPayments.filter((p) => isDueSoon(p)).slice(0, 6);
 
-  // Paid payments this month — for activity feed
   const { data: paidPayments = [] } = usePaymentsList("PAID", monthYear);
 
-  // Active tenants — to show newly added ones in activity feed
   const { data: activeTenants = [] } = useTenants({
     status: "ACTIVE",
     size: 50,
   });
 
-  // PG notification logs — for activity feed
   const { data: notifLogs = [] } = usePgNotificationLogs(30);
 
-  // Unified activity feed — merges payments + notifications + new tenants
   const activityFeed = useActivityFeed(
     paidPayments,
     notifLogs,
@@ -245,6 +236,8 @@ export function DashboardPage() {
       {/* ── Listing banner ────────────────────────────────── */}
       <ListingBanner />
 
+
+
       {/* ── Overdue alert ─────────────────────────────────── */}
       {overdue > 0 && (
         <Link
@@ -261,14 +254,9 @@ export function DashboardPage() {
       {/* ── Metric cards ──────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3">
         <MetricCard
-          // OLD
-          // label="Collection rate"
-
-          // NEW
           label={t("collection_rate")}
           value={`${Math.round(collectionRate)}%`}
-          // NEW
-hint={t("vs_expected")}
+          hint={t("vs_expected")}
           icon={<Percent className="h-4 w-4" />}
         />
         <MetricCard
@@ -286,7 +274,6 @@ hint={t("vs_expected")}
         />
         <MetricCard
           label={t("this_month")}
-
           value={fmtINR(revenue)}
           hint={`Expected ${fmtINR(expectedRev)}`}
           icon={<IndianRupee className="h-4 w-4" />}
@@ -432,6 +419,9 @@ hint={t("vs_expected")}
         </div>
       </section>
 
+            {/* ── Property Overview ─────────────────────────────── */}
+      <PropertyOverviewSection />  {/* ← ADD */}
+
       {/* ── Recent activity ────────────────────────────────── */}
       {activityFeed.length > 0 && (
         <section>
@@ -461,8 +451,6 @@ hint={t("vs_expected")}
         </section>
       )}
 
-      {/* <PropertyOverview /> */}
-
       {/* ── 6-month chart ──────────────────────────────────── */}
       {trend.length > 0 && (
         <section>
@@ -479,6 +467,7 @@ hint={t("vs_expected")}
           </div>
         </section>
       )}
+
       <PendingCheckins />
 
       {/* ── Generate payments modal ────────────────────────── */}
