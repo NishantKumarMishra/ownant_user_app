@@ -8,7 +8,7 @@ import { PropertyCard } from './PropertyCard'
 // ── Skeleton ─────────────────────────────────────────────────
 function CardSkeleton() {
   return (
-    <div className="flex-shrink-0 w-[85vw] max-w-sm bg-surface rounded-2xl border border-border p-5 flex flex-col gap-4 animate-pulse">
+    <div className="flex-shrink-0 w-[88vw] max-w-sm bg-surface rounded-2xl border border-border p-5 flex flex-col gap-4 animate-pulse">
       <div className="flex flex-col gap-1.5">
         <div className="h-5 w-36 bg-gray-200 rounded" />
         <div className="h-3 w-48 bg-gray-100 rounded" />
@@ -39,7 +39,7 @@ export function PropertyOverviewSection() {
   return (
     <section className="flex flex-col gap-3 w-full">
 
-      {/* Header */}
+      {/* Header — stays padded */}
       <div className="flex items-center justify-between px-4">
         <h2 className="text-xl font-bold text-textPrimary">Property Overview</h2>
         <Link
@@ -51,8 +51,8 @@ export function PropertyOverviewSection() {
         </Link>
       </div>
 
-      {/* Scrollable cards */}
-      <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1">
+      {/* Cards — no px, first card carries pl-4, last card carries pr-4 via gap + overflow */}
+      <div className="flex gap-3 overflow-x-auto no-scrollbar pl-4 pr-4 pb-1">
         {isLoading && (
           <>
             <CardSkeleton />
@@ -61,7 +61,7 @@ export function PropertyOverviewSection() {
         )}
 
         {isError && (
-          <p className="text-sm text-textTertiary py-6 px-2">
+          <p className="text-sm text-textTertiary py-6">
             Failed to load properties.
           </p>
         )}
@@ -71,7 +71,7 @@ export function PropertyOverviewSection() {
         ))}
 
         {!isLoading && !isError && overview?.properties.length === 0 && (
-          <p className="text-sm text-textTertiary py-6 px-2">No properties yet.</p>
+          <p className="text-sm text-textTertiary py-6">No properties yet.</p>
         )}
       </div>
 

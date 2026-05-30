@@ -52,7 +52,6 @@ const STAT_ROWS = [
     isCurrency: true,
   },
 ]
-
 export function PropertyCard({ property }: PropertyCardProps) {
   const {
     pgId,
@@ -84,7 +83,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }
 
   return (
-    <div className="flex-shrink-0 w-[85vw] max-w-sm bg-surface rounded-2xl border border-border p-5 flex flex-col gap-4 shadow-sm">
+    <div className="flex-shrink-0 w-[88vw] max-w-sm bg-surface rounded-2xl border border-border p-5 flex flex-col gap-4 shadow-sm">
 
       {/* ── Header: name + ID ── */}
       <div>
@@ -121,7 +120,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
       {/* ── Stat rows ── */}
       <div className="flex flex-col gap-3.5">
-        {STAT_ROWS.map(({ key, label, icon: Icon, iconBg, isCurrency = false }) => {
+        {STAT_ROWS.map(({ key, label, icon: Icon, iconBg, isCurrency }) => {
           const val = statValues[key] ?? 0
           const display = isCurrency ? formatCurrency(val) : String(val)
           return (
