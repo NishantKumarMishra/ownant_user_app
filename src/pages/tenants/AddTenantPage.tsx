@@ -588,13 +588,7 @@ export function AddTenantPage() {
             )}
           </div>
 
-          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
-            <InlineRow label="Stay Type">
-              <TogglePills
-                options={[{ label: 'Long', value: 'LONG' }, { label: 'Short', value: 'SHORT' }]}
-                value={stayType} onChange={v => setValue('stayType', v as 'LONG' | 'SHORT')} />
-            </InlineRow>
-          </div>
+       
 
         </div>
 
