@@ -68,13 +68,13 @@ function InlineRow({ label, required, error, children }: {
 }) {
   return (
     <div className="border-b border-gray-100 last:border-0">
-      <div className="flex items-center justify-between min-h-[54px] px-4 py-2">
-        <span className="text-[13px] text-gray-400 w-28 flex-shrink-0">
+      <div className="flex items-center justify-between min-h-[64px] px-4 py-3">
+        <span className="text-[15px] text-gray-500 w-36 flex-shrink-0 font-medium">
           {label}{required && <span className="text-red-400 ml-0.5">*</span>}
         </span>
         <div className="flex-1 flex justify-end items-center gap-2 min-w-0">{children}</div>
       </div>
-      {error && <p className="text-[11px] text-red-500 px-4 pb-2 -mt-1">{error}</p>}
+      {error && <p className="text-[12px] text-red-500 px-4 pb-2 -mt-1">{error}</p>}
     </div>
   )
 }
@@ -93,7 +93,7 @@ function InlineInput({ placeholder, value, onChange, type = 'text', maxLength, i
         maxLength={maxLength}
         placeholder={placeholder}
         inputMode={type === 'tel' ? 'numeric' : undefined}
-        className="text-[13px] text-right text-gray-800 placeholder:text-gray-300 bg-transparent outline-none min-w-0 flex-1"
+        className="text-[15px] text-right text-gray-800 placeholder:text-gray-300 bg-transparent outline-none min-w-0 flex-1"
       />
       {icon && <span className="flex-shrink-0">{icon}</span>}
     </>
@@ -104,13 +104,13 @@ function InlineInput({ placeholder, value, onChange, type = 'text', maxLength, i
 function InlineAmount({ value, onChange }: { value: number | string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-[13px] text-gray-400">₹</span>
+      <span className="text-[15px] text-gray-400">₹</span>
       <input
         type="number"
         value={value || ''}
         onChange={e => onChange(e.target.value)}
         placeholder="0"
-        className="text-[13px] text-right text-gray-800 placeholder:text-gray-300 bg-transparent outline-none min-w-0 w-28"
+        className="text-[15px] text-right text-gray-800 placeholder:text-gray-300 bg-transparent outline-none min-w-0 w-28"
       />
     </div>
   )
@@ -563,7 +563,7 @@ export function AddTenantPage() {
                 <span className="text-[13px] text-gray-400">Loading...</span>
               ) : (
                 <button type="button" onClick={() => setShowRoom(true)}
-                  className="flex items-center gap-1 text-[13px] font-semibold text-gray-800">
+                  className="flex items-center gap-1 text-[15px] font-semibold text-gray-800">
                   {selectedBed
                     ? `Room ${selectedBed.roomNumber} · Bed ${selectedBed.bedLabel}`
                     : <span className="font-normal text-gray-400">Select Room</span>
@@ -586,6 +586,14 @@ export function AddTenantPage() {
                 </span>
               </div>
             )}
+          </div>
+
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
+            <InlineRow label="Stay Type">
+              <TogglePills
+                options={[{ label: 'Long', value: 'LONG' }, { label: 'Short', value: 'SHORT' }]}
+                value={stayType} onChange={v => setValue('stayType', v as 'LONG' | 'SHORT')} />
+            </InlineRow>
           </div>
 
         </div>
@@ -635,7 +643,7 @@ export function AddTenantPage() {
 
             <InlineRow label="Move-out">
               <button type="button" onClick={() => setShowMoveOut(true)}
-                className="flex items-center gap-2 text-[13px] text-gray-800">
+                className="flex items-center gap-2 text-[15px] text-gray-800">
                 {moveOutExpected
                   ? formatDate(moveOutExpected)
                   : <span className="text-gray-400">Select Date</span>
@@ -649,21 +657,21 @@ export function AddTenantPage() {
             <div className="bg-white overflow-hidden border-t border-b border-gray-100">
               <InlineRow label="Lock-in Period">
                 <button type="button" onClick={() => setShowLockIn(true)}
-                  className="flex items-center gap-1 text-[13px] font-semibold text-gray-800">
+                  className="flex items-center gap-1 text-[15px] font-semibold text-gray-800">
                   {lockInPeriod} Months
                   <ChevronDown className="h-4 w-4 text-[var(--primary,#2C6C28)]" />
                 </button>
               </InlineRow>
               <InlineRow label="Notice Period">
                 <button type="button" onClick={() => setShowNotice(true)}
-                  className="flex items-center gap-1 text-[13px] font-semibold text-gray-800">
+                  className="flex items-center gap-1 text-[15px] font-semibold text-gray-800">
                   {noticePeriod} Days
                   <ChevronDown className="h-4 w-4 text-[var(--primary,#2C6C28)]" />
                 </button>
               </InlineRow>
               <InlineRow label="Agreement">
                 <button type="button" onClick={() => setShowAgreement(true)}
-                  className="flex items-center gap-1 text-[13px] font-semibold text-gray-800">
+                  className="flex items-center gap-1 text-[15px] font-semibold text-gray-800">
                   {agreementPeriod} Months
                   <ChevronDown className="h-4 w-4 text-[var(--primary,#2C6C28)]" />
                 </button>
@@ -723,14 +731,14 @@ export function AddTenantPage() {
           <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <InlineRow label="Referred by">
               <button type="button" onClick={() => setShowReferredBy(true)}
-                className="flex items-center gap-1 text-[13px] text-gray-800">
+                className="flex items-center gap-1 text-[15px] text-gray-800">
                 {referredBy || <span className="text-gray-400">Select source</span>}
                 <ChevronDown className="h-4 w-4 text-[var(--primary,#2C6C28)]" />
               </button>
             </InlineRow>
             <InlineRow label="Tenant Type">
               <button type="button" onClick={() => setShowTenantType(true)}
-                className="flex items-center gap-1 text-[13px] text-gray-800">
+                className="flex items-center gap-1 text-[15px] text-gray-800">
                 {tenantType || <span className="text-gray-400">Select type</span>}
                 <ChevronDown className="h-4 w-4 text-[var(--primary,#2C6C28)]" />
               </button>
