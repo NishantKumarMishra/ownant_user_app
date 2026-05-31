@@ -515,9 +515,9 @@ export function AddTenantPage() {
       <div ref={scrollRef} className="flex-1 pb-28 pt-[106px]">
 
         {/* ── SECTION 1: Tenant Details ── */}
-        <div ref={el => { sectionRefs.current[0] = el }} className="p-4 space-y-3">
+        <div ref={el => { sectionRefs.current[0] = el }} className="py-3 space-y-[1px]">
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <InlineRow label="Name" required error={errors.name?.message}>
               <InlineInput placeholder="Add Name" value={name}
                 onChange={v => setValue('name', v)} icon={<ContactIcon />} />
@@ -532,7 +532,7 @@ export function AddTenantPage() {
             </InlineRow>
           </div>
 
-          <div className="bg-white rounded-2xl px-4 py-3.5 shadow-sm flex items-center gap-3">
+          <div className="bg-white px-4 py-3.5 flex items-center gap-3">
             <button type="button"
               onClick={() => setValue('whatsappReminder', !whatsapp)}
               className={cn(
@@ -548,7 +548,7 @@ export function AddTenantPage() {
             <span className="text-[13px] text-gray-700">Send WhatsApp Rent Reminder</span>
           </div>
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <InlineRow label="Property">
               <span className="text-[13px] font-semibold text-gray-800 flex items-center gap-1">
                 {selectedBed?.roomNumber
@@ -588,20 +588,12 @@ export function AddTenantPage() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-            <InlineRow label="Stay Type">
-              <TogglePills
-                options={[{ label: 'Long', value: 'LONG' }, { label: 'Short', value: 'SHORT' }]}
-                value={stayType} onChange={v => setValue('stayType', v as 'LONG' | 'SHORT')} />
-            </InlineRow>
-          </div>
-
         </div>
 
         {/* ── SECTION 2: Stay Details ── */}
-        <div ref={el => { sectionRefs.current[1] = el }} className="px-4 pb-4 space-y-3">
+        <div ref={el => { sectionRefs.current[1] = el }} className="pb-3 space-y-[1px]">
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <InlineRow label="Stay Type">
               <TogglePills
                 options={[{ label: 'Long', value: 'LONG' }, { label: 'Short', value: 'SHORT' }]}
@@ -609,7 +601,7 @@ export function AddTenantPage() {
             </InlineRow>
           </div>
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <InlineRow label="Move-in" required>
               <div className="flex items-center gap-2">
                 <input type="date" value={moveInDate}
@@ -654,7 +646,7 @@ export function AddTenantPage() {
           </div>
 
           {stayType === 'LONG' && (
-            <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-white overflow-hidden border-t border-b border-gray-100">
               <InlineRow label="Lock-in Period">
                 <button type="button" onClick={() => setShowLockIn(true)}
                   className="flex items-center gap-1 text-[13px] font-semibold text-gray-800">
@@ -679,7 +671,7 @@ export function AddTenantPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <InlineRow label="Rental Frequency">
               <span className="text-[13px] font-semibold text-gray-800 flex items-center gap-1">
                 {stayType === 'SHORT' ? 'Daily' : 'Monthly'}
@@ -699,9 +691,9 @@ export function AddTenantPage() {
         </div>
 
         {/* ── SECTION 3: Payment Details ── */}
-        <div ref={el => { sectionRefs.current[2] = el }} className="px-4 pb-4 space-y-3">
+        <div ref={el => { sectionRefs.current[2] = el }} className="pb-3 space-y-[1px]">
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <InlineRow label="Security Deposit">
               <InlineAmount value={securityDeposit} onChange={v => setValue('securityDeposit', Number(v))} />
             </InlineRow>
@@ -728,7 +720,7 @@ export function AddTenantPage() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <InlineRow label="Referred by">
               <button type="button" onClick={() => setShowReferredBy(true)}
                 className="flex items-center gap-1 text-[13px] text-gray-800">
@@ -745,14 +737,14 @@ export function AddTenantPage() {
             </InlineRow>
           </div>
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <InlineRow label="Remarks">
               <input placeholder="Any notes..." {...register('notes')}
                 className="text-[13px] text-right text-gray-800 placeholder:text-gray-300 bg-transparent outline-none flex-1 min-w-0" />
             </InlineRow>
           </div>
 
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white overflow-hidden border-t border-b border-gray-100">
             <div className="px-4 py-3.5 border-b border-gray-100">
               <span className="text-[14px] font-semibold text-gray-800">Opening Balance</span>
             </div>
