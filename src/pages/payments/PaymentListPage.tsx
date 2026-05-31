@@ -338,7 +338,7 @@ export function PaymentListPage() {
             const statusIcon   = getStatusIcon(p)
             const dueDateLabel = getDueDateLabel(p)
             const canAct       = statusLabel !== 'Paid' && statusLabel !== 'Waived'
-            const balanceDue   = p.amountDue - (p.amountPaid ?? 0)
+            //const balanceDue   = p.amountDue - (p.amountPaid ?? 0)
 
             return (
               <div
@@ -374,7 +374,7 @@ export function PaymentListPage() {
                       <p className="text-xs text-textSecondary">
                         Partial: {formatCurrency(p.amountPaid)} paid ·{' '}
                         <span className="text-danger font-medium">
-                          {formatCurrency(balanceDue)} remaining
+                          {formatCurrency(p.amountDue)} remaining
                         </span>
                       </p>
                     )}
