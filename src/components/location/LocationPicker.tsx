@@ -1,10 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
-import { MapPin, Navigation, Loader2, X, Building2, AlertCircle } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { MapPin, Navigation, Loader2, X, Building2, AlertCircle, Map } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// ── TODO: Add Google Maps API key to .env when received ───────
-// VITE_GOOGLE_MAPS_KEY=AIzaSy...
-// Get from: console.cloud.google.com → Enable Places API + Geocoding API
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
 
 export interface LocationData {
@@ -26,19 +23,33 @@ function generateSessionToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
 }
 
-// ── Google Places API calls ───────────────────────────────────
-// WHY proxy through backend: Google Places API blocks direct
-// browser requests when using server-side restricted keys.
-// Once you have the API key, add it to .env and enable
-// the proxy endpoint in PlacesController.java
+// ── Load Google Maps script once ─────────────────────────────
+let scriptPromise: Promise<void> | null = null
 
+function loadGoogleMaps(): Promise<void> {
+  if (window.google?.maps) return Promise.resolve()
+  if (scriptPromise) return scriptPromise
+
+  scriptPromise = new Promise((resolve, reject) => {
+    const cb = `__gmInit_${Date.now()}`
+    ;(window as any)[cb] = () => resolve()
+
+    const s = document.createElement('script')
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places&callback=${cb}`
+    s.async = true
+    s.defer = true
+    s.onerror = reject
+    document.head.appendChild(s)
+  })
+
+  return scriptPromise
+}
+
+// ── API helpers (proxy through backend) ──────────────────────
 async function getPlacePredictions(query: string, token: string): Promise<PlacePrediction[]> {
   if (!GOOGLE_API_KEY || query.length < 3) return []
   try {
-    // Calls backend proxy → backend calls Google
-    const res  = await fetch(
-      `/api/v1/public/places/autocomplete?input=${encodeURIComponent(query)}&token=${token}`
-    )
+    const res  = await fetch(`/api/v1/public/places/autocomplete?input=${encodeURIComponent(query)}&token=${token}`)
     const data = await res.json()
     return (data.predictions ?? []).map((p: any) => ({
       placeId:       p.place_id,
@@ -51,9 +62,7 @@ async function getPlacePredictions(query: string, token: string): Promise<PlaceP
 async function getPlaceLatLng(placeId: string, token: string) {
   if (!GOOGLE_API_KEY) return null
   try {
-    const res  = await fetch(
-      `/api/v1/public/places/details?placeId=${placeId}&token=${token}`
-    )
+    const res  = await fetch(`/api/v1/public/places/details?placeId=${placeId}&token=${token}`)
     const data = await res.json()
     const loc  = data.result?.geometry?.location
     if (!loc) return null
@@ -72,7 +81,108 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
   }
 }
 
-// ── Autocomplete input ────────────────────────────────────────
+// ── Interactive Map with draggable pin ───────────────────────
+function InteractiveMap({ lat, lng, onPinMove }: {
+  lat: number
+  lng: number
+  onPinMove: (lat: number, lng: number, address: string) => void
+}) {
+  const mapRef     = useRef<HTMLDivElement>(null)
+  const mapObj     = useRef<google.maps.Map | null>(null)
+  const markerObj  = useRef<google.maps.Marker | null>(null)
+  const [loading,  setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!mapRef.current || !GOOGLE_API_KEY) return
+
+    loadGoogleMaps().then(() => {
+      setLoading(false)
+
+      const center = { lat, lng }
+
+      // Init map
+      mapObj.current = new window.google.maps.Map(mapRef.current!, {
+        center,
+        zoom: 16,
+        mapTypeControl:    false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        zoomControl:       true,
+        gestureHandling:   'greedy',
+        styles: [
+          { featureType: 'poi.business', stylers: [{ visibility: 'simplified' }] },
+        ],
+      })
+
+      // Draggable marker
+      markerObj.current = new window.google.maps.Marker({
+        position:  center,
+        map:       mapObj.current,
+        draggable: true,
+        animation: window.google.maps.Animation.DROP,
+        title:     'Drag to adjust your PG location',
+        icon: {
+          url: 'data:image/svg+xml,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
+              <ellipse cx="16" cy="40" rx="8" ry="3" fill="rgba(0,0,0,0.15)"/>
+              <path d="M16 2C9.373 2 4 7.373 4 14c0 9 12 26 12 26S28 23 28 14C28 7.373 22.627 2 16 2z"
+                fill="#1D9E75" stroke="white" stroke-width="2"/>
+              <circle cx="16" cy="14" r="5" fill="white"/>
+            </svg>
+          `),
+          anchor: new window.google.maps.Point(16, 42),
+        },
+      })
+
+      // Drag end → reverse geocode
+      markerObj.current.addListener('dragend', async () => {
+        const pos = markerObj.current?.getPosition()
+        if (!pos) return
+        const newLat = pos.lat()
+        const newLng = pos.lng()
+        const address = await reverseGeocode(newLat, newLng)
+        onPinMove(newLat, newLng, address)
+      })
+
+      // Click on map → move pin
+      mapObj.current.addListener('click', async (e: google.maps.MapMouseEvent) => {
+        const clickLat = e.latLng?.lat()
+        const clickLng = e.latLng?.lng()
+        if (clickLat == null || clickLng == null) return
+        markerObj.current?.setPosition({ lat: clickLat, lng: clickLng })
+        const address = await reverseGeocode(clickLat, clickLng)
+        onPinMove(clickLat, clickLng, address)
+      })
+    }).catch(() => setLoading(false))
+  }, [])  // Init once
+
+  // Update marker when lat/lng changes externally
+  useEffect(() => {
+    if (!mapObj.current || !markerObj.current) return
+    const pos = { lat, lng }
+    markerObj.current.setPosition(pos)
+    mapObj.current.panTo(pos)
+  }, [lat, lng])
+
+  if (!GOOGLE_API_KEY) return null
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden border border-border" style={{ height: 240 }}>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-surface z-10">
+          <Loader2 className="h-6 w-6 text-primary animate-spin" />
+        </div>
+      )}
+      <div ref={mapRef} className="w-full h-full" />
+      {/* Hint overlay */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] px-3 py-1 rounded-full pointer-events-none">
+        Drag pin or tap map to adjust location
+      </div>
+    </div>
+  )
+}
+
+// ── Places autocomplete input ─────────────────────────────────
 function PlacesInput({ icon, label, placeholder, value, hint, onSelect, onClear }: {
   icon:        React.ReactNode
   label:       string
@@ -86,9 +196,9 @@ function PlacesInput({ icon, label, placeholder, value, hint, onSelect, onClear 
   const [predictions, setPredictions] = useState<PlacePrediction[]>([])
   const [loading,     setLoading]     = useState(false)
   const [open,        setOpen]        = useState(false)
-  const debounceRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const wrapperRef    = useRef<HTMLDivElement | null>(null)
-  const tokenRef      = useRef(generateSessionToken())
+  const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wrapperRef   = useRef<HTMLDivElement | null>(null)
+  const tokenRef     = useRef(generateSessionToken())
 
   useEffect(() => { setQuery(value) }, [value])
 
@@ -132,7 +242,7 @@ function PlacesInput({ icon, label, placeholder, value, hint, onSelect, onClear 
         <input
           value={query}
           onChange={e => handleInput(e.target.value)}
-          placeholder={isReady ? placeholder : 'Google Maps API key pending...'}
+          placeholder={isReady ? placeholder : 'Add VITE_GOOGLE_MAPS_API_KEY to .env...'}
           disabled={!isReady}
           autoComplete="off"
           className={cn(
@@ -144,25 +254,31 @@ function PlacesInput({ icon, label, placeholder, value, hint, onSelect, onClear 
           )}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          {loading ? <Loader2 className="h-4 w-4 text-textSecondary animate-spin" />
-            : query ? <button type="button" onClick={() => { setQuery(''); setPredictions([]); onClear() }}>
-                <X className="h-4 w-4 text-textSecondary hover:text-danger" />
-              </button>
-            : null}
+          {loading
+            ? <Loader2 className="h-4 w-4 text-textSecondary animate-spin" />
+            : query
+              ? <button type="button" onClick={() => { setQuery(''); setPredictions([]); onClear() }}>
+                  <X className="h-4 w-4 text-textSecondary hover:text-danger" />
+                </button>
+              : null}
         </div>
       </div>
       {hint && <p className="text-xs text-textSecondary mt-1">{hint}</p>}
       {!isReady && (
         <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
           <AlertCircle className="h-3 w-3" />
-          Will be enabled once Google Maps API key is added
+          Add VITE_GOOGLE_MAPS_API_KEY to .env to enable
         </p>
       )}
       {open && predictions.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-surface border border-border rounded-2xl shadow-cardHover overflow-hidden">
           {predictions.map((p, i) => (
-            <button key={p.placeId || i} type="button" onClick={() => handleSelect(p)}
-              className="w-full flex items-start gap-2.5 px-4 py-3 text-left hover:bg-primaryLight transition-colors border-b border-border last:border-0">
+            <button
+              key={p.placeId || i}
+              type="button"
+              onClick={() => handleSelect(p)}
+              className="w-full flex items-start gap-2.5 px-4 py-3 text-left hover:bg-primaryLight transition-colors border-b border-border last:border-0"
+            >
               <MapPin className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-textPrimary truncate">{p.mainText}</p>
@@ -180,9 +296,16 @@ function PlacesInput({ icon, label, placeholder, value, hint, onSelect, onClear 
 }
 
 // ── Main LocationPicker ───────────────────────────────────────
-export function LocationPicker({ value, onChange }: { value: LocationData; onChange: (d: LocationData) => void }) {
-  const [locating, setLocating] = useState(false)
-  const [located,  setLocated]  = useState(!!value.lat)
+export function LocationPicker({
+  value,
+  onChange,
+}: {
+  value:    LocationData
+  onChange: (d: LocationData) => void
+}) {
+  const [locating,  setLocating]  = useState(false)
+  const [located,   setLocated]   = useState(!!value.lat)
+  const [showMap,   setShowMap]   = useState(!!value.lat)
 
   const handleGPS = () => {
     if (!navigator.geolocation) { alert('Location not supported'); return }
@@ -191,10 +314,9 @@ export function LocationPicker({ value, onChange }: { value: LocationData; onCha
       async pos => {
         const { latitude: lat, longitude: lng } = pos.coords
         try {
-          // Works even without API key — stores coordinates
-          // With API key — also reverse geocodes to readable address
           const address = await reverseGeocode(lat, lng)
           setLocated(true)
+          setShowMap(true)
           onChange({ ...value, address, lat, lng })
         } finally { setLocating(false) }
       },
@@ -205,6 +327,8 @@ export function LocationPicker({ value, onChange }: { value: LocationData; onCha
 
   const handleAddressSelect = async (p: PlacePrediction) => {
     const coords = await getPlaceLatLng(p.placeId, generateSessionToken())
+    setShowMap(!!coords)
+    if (coords) setLocated(true)
     onChange({ ...value, address: p.mainText, lat: coords?.lat, lng: coords?.lng })
   }
 
@@ -213,45 +337,76 @@ export function LocationPicker({ value, onChange }: { value: LocationData; onCha
     onChange({ ...value, landmark: p.mainText, landmarkLat: coords?.lat, landmarkLng: coords?.lng })
   }
 
+  const handlePinMove = useCallback((lat: number, lng: number, address: string) => {
+    onChange({ ...value, lat, lng, address })
+  }, [value, onChange])
+
   return (
     <div className="space-y-4">
 
-      {/* GPS button — works NOW without API key */}
-      <button type="button" onClick={handleGPS} disabled={locating}
+      {/* GPS button */}
+      <button
+        type="button"
+        onClick={handleGPS}
+        disabled={locating}
         className={cn(
           'w-full flex items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed py-4 transition-all',
-          located ? 'border-success bg-success/5 text-success'
+          located
+            ? 'border-success bg-success/5 text-success'
             : 'border-primary/30 bg-primaryLight text-primary hover:border-primary',
           locating && 'opacity-70 cursor-wait',
         )}
       >
-        {locating ? <Loader2 className="h-5 w-5 animate-spin" />
+        {locating
+          ? <Loader2 className="h-5 w-5 animate-spin" />
           : <Navigation className={cn('h-5 w-5', located && 'text-success')} />}
         <span className="text-sm font-semibold">
-          {locating ? 'Getting your location...'
-            : located ? '✓ Location captured!'
+          {locating        ? 'Getting your location...'
+            : located      ? '✓ Location captured — drag pin to adjust'
             : 'Use my current location'}
         </span>
       </button>
 
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-textMuted font-medium">OR type manually</span>
+        <span className="text-xs text-textMuted font-medium">OR search address</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
-      {/* Address search */}
+      {/* Address autocomplete */}
       <PlacesInput
         icon={<MapPin className="h-4 w-4" />}
         label="Exact address / locality"
         placeholder="e.g. Koramangala 5th Block, Bangalore"
         value={value.address ?? ''}
-        hint="Tenants will see this location on the map"
+        hint="Tenants will see this on the map"
         onSelect={handleAddressSelect}
-        onClear={() => onChange({ ...value, address: undefined, lat: undefined, lng: undefined })}
+        onClear={() => {
+          setShowMap(false)
+          setLocated(false)
+          onChange({ ...value, address: undefined, lat: undefined, lng: undefined })
+        }}
       />
 
-      {/* Landmark search */}
+      {/* Interactive map with draggable pin */}
+      {showMap && value.lat && value.lng && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-textSecondary uppercase tracking-wide flex items-center gap-1.5">
+              <Map className="h-3.5 w-3.5" />
+              Pin your exact location
+            </label>
+            <span className="text-[10px] text-textMuted">Drag pin or tap map to adjust</span>
+          </div>
+          <InteractiveMap
+            lat={value.lat}
+            lng={value.lng}
+            onPinMove={handlePinMove}
+          />
+        </div>
+      )}
+
+      {/* Landmark autocomplete */}
       <PlacesInput
         icon={<Building2 className="h-4 w-4" />}
         label="Nearby landmark (optional)"
@@ -259,10 +414,15 @@ export function LocationPicker({ value, onChange }: { value: LocationData; onCha
         value={value.landmark ?? ''}
         hint="Helps tenants search 'PG near SRM College'"
         onSelect={handleLandmarkSelect}
-        onClear={() => onChange({ ...value, landmark: undefined, landmarkLat: undefined, landmarkLng: undefined })}
+        onClear={() => onChange({
+          ...value,
+          landmark:    undefined,
+          landmarkLat: undefined,
+          landmarkLng: undefined,
+        })}
       />
 
-      {/* Confirmation */}
+      {/* Confirmation bar */}
       {value.lat && value.lng && (
         <div className="flex items-center gap-2 bg-success/5 border border-success/20 rounded-2xl px-4 py-3">
           <div className="h-2 w-2 rounded-full bg-success flex-shrink-0 animate-pulse" />
@@ -273,10 +433,13 @@ export function LocationPicker({ value, onChange }: { value: LocationData; onCha
               {value.landmark ? ` · Near ${value.landmark}` : ''}
             </p>
           </div>
-          <a href={`https://www.google.com/maps?q=${value.lat},${value.lng}`}
-            target="_blank" rel="noopener noreferrer"
-            className="text-xs text-primary font-medium hover:underline flex-shrink-0">
-            View →
+          <a
+            href={`https://www.google.com/maps?q=${value.lat},${value.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-primary font-medium hover:underline flex-shrink-0"
+          >
+            View map →
           </a>
         </div>
       )}
