@@ -1,0 +1,131 @@
+src
+├── App.tsx
+├── api
+│   ├── axios.ts
+│   ├── endpoints.ts
+│   └── types.ts
+├── assets
+│   ├── hero.png
+│   ├── leaderboard.svg
+│   ├── react.svg
+│   └── vite.svg
+├── components
+│   ├── LanguageSwitcher.tsx
+│   ├── checkin
+│   │   ├── CheckinStatusCard.tsx
+│   │   └── PendingCheckins.tsx
+│   ├── dashboard
+│   │   ├── CollectionChart.tsx
+│   │   ├── DashboardFooter.tsx
+│   │   ├── MetricCard.tsx
+│   │   ├── PropertyCard.tsx
+│   │   ├── PropertyOverviewSection.tsx
+│   │   └── SlidingCards.tsx
+│   ├── layout
+│   │   ├── AppLayout.tsx
+│   │   ├── BottomNav.tsx
+│   │   ├── PgSwitcher.tsx
+│   │   ├── PwaInstallBanner.tsx
+│   │   ├── SidebarNav.tsx
+│   │   └── TopBar.tsx
+│   ├── listing
+│   │   └── ListingBanner.tsx
+│   ├── location
+│   │   ├── CitySearch.tsx
+│   │   └── LocationPicker.tsx
+│   ├── pwa
+│   │   ├── InstallBanner.tsx
+│   │   └── IosInstallBanner.tsx
+│   ├── rooms
+│   │   ├── BedSlot.tsx
+│   │   └── RoomCard.tsx
+│   ├── tenants
+│   │   └── TenantRow.tsx
+│   └── ui
+│       ├── Badge.tsx
+│       ├── BottomSheet.tsx
+│       ├── Button.tsx
+│       ├── Card.tsx
+│       ├── EmptyState.tsx
+│       ├── Input.tsx
+│       ├── Modal.tsx
+│       ├── Skeleton.tsx
+│       └── Spinner.tsx
+├── hooks
+│   ├── useActivityFeed.ts
+│   ├── useAnalytics.ts
+│   ├── useAuth.ts
+│   ├── useBilling.ts
+│   ├── useCheckin.ts
+│   ├── useElectricity.ts
+│   ├── useListing.ts
+│   ├── useNotifications.ts
+│   ├── usePWAInstall.ts
+│   ├── usePayments.ts
+│   ├── usePgs.ts
+│   ├── usePropertyOverview.ts
+│   ├── useRooms.ts
+│   └── useTenants.ts
+├── i18n.ts
+├── index.css
+├── lib
+│   ├── apiError.ts
+│   ├── format.ts
+│   ├── isIOS.ts
+│   └── utils.ts
+├── locales
+│   ├── en
+│   │   └── translation.json
+│   ├── hi
+│   │   └── translation.json
+│   └── ta
+│       └── translation.json
+├── main.tsx
+├── pages
+│   ├── ListingSetupPage
+│   │   └── ListingSetupPage.tsx
+│   ├── PaymentSettings
+│   │   └── PaymentSettingsPage.tsx
+│   ├── analytics
+│   │   └── AnalyticsPage.tsx
+│   ├── auth
+│   │   ├── LoginPage.tsx
+│   │   ├── OtpPage.tsx
+│   │   └── RegisterPage.tsx
+│   ├── checkin
+│   │   └── CheckinPage.tsx
+│   ├── dashboard
+│   │   └── DashboardPage.tsx
+│   ├── electricity
+│   │   └── ElectricityPage.tsx
+│   ├── notifications
+│   │   └── NotificationsPage.tsx
+│   ├── onboarding
+│   │   ├── OnboardingPgPage.tsx
+│   │   └── OnboardingRoomsPage.tsx
+│   ├── payments
+│   │   ├── PaymentDetailPage.tsx
+│   │   └── PaymentListPage.tsx
+│   ├── profile
+│   │   ├── BillingPage.tsx
+│   │   └── ProfilePage.tsx
+│   ├── rooms
+│   │   ├── AddRoomPage.tsx
+│   │   ├── RoomDetailPage.tsx
+│   │   └── RoomListPage.tsx
+│   └── tenants
+│       ├── AddTenantPage.tsx
+│       ├── TenantDetailPage.tsx
+│       ├── TenantImportPage.tsx
+│       └── TenantListPage.tsx
+├── routes
+│   ├── CatchAll.tsx
+│   └── ProtectedRoute.tsx
+├── store
+│   ├── authStore.ts
+│   └── pgStore.ts
+├── theme
+│   └── colors.ts
+└── vite-env.d.ts
+
+36 directories, 93 files

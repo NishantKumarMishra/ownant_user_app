@@ -50,12 +50,31 @@ export interface OwnerProfile extends Owner {
   memberSince: string
 }
 
+// types.ts mein PgSummary replace karo:
+
 export interface PgSummary {
-  id: string
-  name: string
-  city?: string
-  totalBeds?: number
-  occupiedBeds?: number
+  id:           string
+  name:         string
+  city?:        string
+  address?:     string
+  phone?:       string
+  pincode?:     string
+  isActive?:    boolean
+  isSelected?:  boolean
+  propertyType?: string
+  isListed?:    boolean
+  createdAt?:   string
+  stats?: {
+    totalRooms:    number
+    totalBeds:     number
+    occupiedBeds:  number
+    vacantBeds:    number
+    activeTenants: number
+    occupancyRate: number
+  }
+  // Legacy flat fields (fallback)
+  totalBeds?:        number
+  occupiedBeds?:     number
   occupancyPercent?: number
 }
 
