@@ -2,9 +2,12 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Plus, Edit3, Trash2, Globe, ChevronRight, X, Loader2 } from 'lucide-react'
 import { BottomSheet } from '@/components/ui/BottomSheet'
-import { usePgsList, useSwitchPg } from '@/hooks/usePgs'
+import * as Dialog from '@radix-ui/react-dialog'
+import { usePgsList, useSwitchPg } from "@/hooks/usePgs"
+import { useQueryClient } from "@tanstack/react-query"
 import { usePgStore } from '@/store/pgStore'
 import api from '@/api/axios'
+import { ENDPOINTS } from '@/api/endpoints'
 import toast from 'react-hot-toast'
 
 interface PgSwitcherProps {
@@ -230,6 +233,7 @@ export function PgSwitcher({ open, onOpenChange }: PgSwitcherProps) {
   const { activePgId, setActivePg } = usePgStore()
   const { data: pgs, isLoading }    = usePgsList(open)
   const switchPg                    = useSwitchPg()
+  const queryClient = useQueryClient()
   const [togglingId,   setTogglingId]   = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<any | null>(null)
 
@@ -248,11 +252,11 @@ export function PgSwitcher({ open, onOpenChange }: PgSwitcherProps) {
       switchPg.mutateAsync(pg.id).then(data => {
         setActivePg(pg.id, data?.pg?.name ?? pg.name)
         onOpenChange(false)
-        navigate('/profile/listing')
+        navigate('/listing/setup')
       }).catch(() => {})
     } else {
       onOpenChange(false)
-      navigate('/profile/listing')
+      navigate('/listing/setup')
     }
   }
 
@@ -266,10 +270,10 @@ export function PgSwitcher({ open, onOpenChange }: PgSwitcherProps) {
     setTogglingId(pg.id)
     try {
       if (pg.isListed) {
-        await api.post('/api/v1/listing/me/unpublish')
+        await api.post('/listing/me/unpublish')
         toast.success('Listing hidden from search')
       } else {
-        await api.post('/api/v1/listing/me/publish')
+        await api.post('/listing/me/publish')
         toast.success('🎉 Your PG is now live on findpg!')
       }
     } catch (e: any) {
@@ -282,12 +286,29 @@ export function PgSwitcher({ open, onOpenChange }: PgSwitcherProps) {
   const confirmDeletePg = async () => {
     if (!confirmDelete) return
     try {
-      await api.delete(`/api/v1/pgs/${confirmDelete.id}`)
+      // If deleting active PG, switch to another first
+      const otherPg = pgList.find((p: any) => p.id !== confirmDelete.id)
+
+      await api.delete(ENDPOINTS.PG_BY_ID(confirmDelete.id))
       toast.success(`${confirmDelete.name} deleted`)
-      setConfirmDelete(null)
-      onOpenChange(false)
-    } catch {
-      toast.error('Cannot delete active PG — switch to another first')
+
+      if (otherPg) {
+        // Switch to another PG so activePgId stays valid
+        const data = await switchPg.mutateAsync(otherPg.id)
+        setActivePg(otherPg.id, data?.pg?.name ?? otherPg.name)
+        void queryClient.invalidateQueries({ queryKey: ["pgs"] })
+        setConfirmDelete(null)
+        onOpenChange(false)
+        navigate("/dashboard")
+      } else {
+        // No other PG exists — go to onboarding
+        void queryClient.invalidateQueries({ queryKey: ["pgs"] })
+        setConfirmDelete(null)
+        onOpenChange(false)
+        navigate("/onboarding/pg")
+      }
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Delete failed")
       setConfirmDelete(null)
     }
   }
@@ -371,36 +392,43 @@ export function PgSwitcher({ open, onOpenChange }: PgSwitcherProps) {
         </div>
       </BottomSheet>
 
-      {/* Delete confirm */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setConfirmDelete(null)}>
-          <div className="w-full max-w-sm bg-white rounded-3xl p-6"
-            onClick={e => e.stopPropagation()}>
+      {/* Delete confirm — Radix Dialog so focus trap works correctly */}
+      <Dialog.Root open={!!confirmDelete} onOpenChange={(o) => { if (!o) setConfirmDelete(null) }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-[70] bg-black/50" />
+          <Dialog.Content
+            className="fixed inset-x-4 bottom-8 z-[70] max-w-sm mx-auto bg-white rounded-3xl p-6 focus:outline-none"
+            style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
+            aria-describedby="delete-desc"
+          >
+            <Dialog.Title className="sr-only">Delete PG</Dialog.Title>
             <div className="h-12 w-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="h-6 w-6 text-red-500"/>
             </div>
             <h3 className="text-lg font-black text-gray-900 text-center mb-1">
-              Delete {confirmDelete.name}?
+              Delete {confirmDelete?.name}?
             </h3>
-            <p className="text-xs text-gray-400 text-center mb-6">
+            <p id="delete-desc" className="text-xs text-gray-400 text-center mb-6">
               All rooms, tenants and payment data will be permanently deleted.
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm font-bold text-gray-600">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm font-bold text-gray-600"
+              >
                 Cancel
               </button>
-              <button onClick={confirmDeletePg}
+              <button
+                onClick={confirmDeletePg}
                 className="flex-1 py-3 rounded-2xl text-sm font-bold text-white"
-                style={{ background: 'linear-gradient(135deg,#EF4444,#DC2626)' }}>
+                style={{ background: 'linear-gradient(135deg,#EF4444,#DC2626)' }}
+              >
                 Delete
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </>
   )
 }
