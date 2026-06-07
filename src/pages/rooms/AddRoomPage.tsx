@@ -1,12 +1,14 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import * as Switch from '@radix-ui/react-switch'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { useCreateRoom } from '@/hooks/useRooms'
+import { useCreateRoom, useRoom, useUpdateRoom } from '@/hooks/useRooms'
 import { handleApiError } from '@/lib/apiError'
+import toast from 'react-hot-toast'
 
 const schema = z.object({
   roomNumber: z.string().min(1, 'Required'),
@@ -20,13 +22,21 @@ const schema = z.object({
 type Form = z.infer<typeof schema>
 
 export function AddRoomPage() {
+  const { id } = useParams()
+  const isEditMode = Boolean(id)
+  
   const navigate = useNavigate()
   const create = useCreateRoom()
+  const update = useUpdateRoom(id || '') // 🟢 Passing id to hook directly as per useRooms.ts structure
+
+  const { data: roomData, isLoading: isRoomLoading } = useRoom(id)
+
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<Form>({
     resolver: zodResolver(schema),
@@ -34,18 +44,48 @@ export function AddRoomPage() {
   })
   const isAc = watch('isAc')
 
+  // Pre-fill values during Edit mode
+  useEffect(() => {
+    if (isEditMode && roomData) {
+      reset({
+        roomNumber: roomData.roomNumber,
+        floor: roomData.floor ?? '',
+        sharingType: roomData.sharingType,
+        rentPerBed: roomData.rentPerBed,
+        notes: roomData.notes ?? '',
+        isAc: roomData.isAc,
+      })
+    }
+  }, [roomData, isEditMode, reset])
+
   const onSubmit = async (data: Form) => {
     try {
-      await create.mutateAsync(data)
-      navigate('/rooms')
+      if (isEditMode) {
+        await update.mutateAsync(data) // 🟢 Passing payload directly as required by hook mutationFn
+        toast.success('Room updated successfully')
+      } else {
+        await create.mutateAsync(data)
+        toast.success('Room added successfully')
+      }
+      navigate(isEditMode ? `/rooms/${id}` : '/rooms')
     } catch (e) {
       handleApiError(e)
     }
   }
 
+  if (isEditMode && isRoomLoading) {
+    return (
+      <div className="mx-auto max-w-lg text-center py-12 text-sm text-textSecondary">
+        Loading room data...
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-lg pb-8">
-      <h1 className="text-xl font-bold text-textPrimary">Add room</h1>
+      <h1 className="text-xl font-bold text-textPrimary">
+        {isEditMode ? 'Edit room' : 'Add room'}
+      </h1>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
         <Input label="Room number" error={errors.roomNumber?.message} {...register('roomNumber')} />
         <Input label="Floor" {...register('floor')} />
@@ -74,9 +114,27 @@ export function AddRoomPage() {
           {...register('rentPerBed')}
         />
         <Input label="Notes" {...register('notes')} />
-        <Button type="submit" className="w-full" disabled={create.isPending}>
-          Save
-        </Button>
+
+        {/* 🟢 Render dynamic button sets based on Edit Mode or Create Mode */}
+        {isEditMode ? (
+          <div className="flex gap-3 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="flex-1"
+              onClick={() => navigate(`/rooms/${id}`)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1" disabled={update.isPending}>
+              {update.isPending ? 'Saving…' : 'Save Changes'}
+            </Button>
+          </div>
+        ) : (
+          <Button type="submit" className="w-full" disabled={create.isPending}>
+            {create.isPending ? 'Saving…' : 'Save'}
+          </Button>
+        )}
       </form>
     </div>
   )

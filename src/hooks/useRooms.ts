@@ -82,7 +82,7 @@ export function useUpdateRoom(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (payload: Partial<Room>) => {
-      const res = await api.patch<ApiResponse<Room>>(ENDPOINTS.ROOM_BY_ID(id), payload)
+      const res = await api.put<ApiResponse<Room>>(ENDPOINTS.ROOM_BY_ID(id), payload)
       return res.data.data
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['rooms'] }),

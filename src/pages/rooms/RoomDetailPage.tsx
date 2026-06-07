@@ -55,13 +55,16 @@ export function RoomDetailPage() {
       </div>
 
       <div className="flex gap-2">
-        <Button variant="secondary" size="sm" type="button" >
-          <Pencil className="h-4 w-4" />
-          Edit
+        {/* 🟢 Fixed button layout with functional navigation link */}
+        <Button variant="secondary" size="sm" asChild>
+          <Link to={`/rooms/${id}/edit`}>
+            <Pencil className="h-4 w-4 mr-1.5" />
+            Edit
+          </Link>
         </Button>
         {allVacant ? (
           <Button variant="danger" size="sm" type="button" onClick={() => setConfirmDel(true)}>
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4 mr-1.5" />
             Delete
           </Button>
         ) : null}

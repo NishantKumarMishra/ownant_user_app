@@ -145,6 +145,7 @@ export function useWaivePayment() {
 
 // ── Single payment detail ─────────────────────────────────────
 export function usePayment(id: string | undefined) {
+ 
   return useQuery({
     queryKey: ['payments', 'detail', id],
     queryFn: async () => {

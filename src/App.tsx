@@ -61,6 +61,7 @@ export default function App() {
           <Route path="/rooms"           element={<RoomListPage />} />
           <Route path="/rooms/add"       element={<AddRoomPage />} />
           <Route path="/rooms/:id"       element={<RoomDetailPage />} />
+          <Route path="/rooms/:id/edit"  element={<AddRoomPage />} />
           <Route path="/tenants"         element={<TenantListPage />} />
           <Route path="/tenants/add"     element={<AddTenantPage />} />
           <Route path="/tenants/import"  element={<TenantImportPage />} />

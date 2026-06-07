@@ -1,16 +1,16 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { format, differenceInDays, parseISO } from 'date-fns'
 import {
   ArrowLeft, CheckCircle2, AlertCircle, Clock,
-  IndianRupee, Calendar, Phone, Home, Banknote,
+  IndianRupee, Calendar, Phone, Home
 } from 'lucide-react'
 import { Badge }       from '@/components/ui/Badge'
 import { Button }      from '@/components/ui/Button'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Input }       from '@/components/ui/Input'
 import { Skeleton }    from '@/components/ui/Skeleton'
-import { usePayment, useMarkPaid, useWaivePayment } from '@/hooks/usePayments'
+import { usePayment, useMarkPaid, useWaivePayment } from '@/hooks/usePayments' // 🟢 Back to single payment hook
 import { formatCurrency, formatDate } from '@/lib/format'
 import toast from 'react-hot-toast'
 import { handleApiError } from '@/lib/apiError'
@@ -41,8 +41,27 @@ function getDaysLabel(dueDate: string, status: string): string {
 // ── Component ─────────────────────────────────────────────────
 
 export function PaymentDetailPage() {
-  const { id } = useParams()
-  const { data: p, isLoading, isError } = usePayment(id)
+  const { id } = useParams() // URL se Payment ID nikal rahe hain
+  
+  // 1. Core single payment hook hit karein
+  const { data: apiResponse, isLoading, isError } = usePayment(id)
+
+  // 2. 🟢 100% FOOLPROOF UNWRAP LOGIC: Handling both direct objects and single element arrays
+  const p = useMemo(() => {
+    if (!apiResponse) return null
+    
+    // Condition A: Agar response array format me aa gaya ho
+    if (Array.isArray(apiResponse)) {
+      return apiResponse[0]
+    }
+    
+    // Condition B: Agar backend wrapper data use kar raha ho (apiResponse.data)
+    if ('data' in apiResponse && apiResponse.data) {
+      return Array.isArray(apiResponse.data) ? apiResponse.data[0] : apiResponse.data
+    }
+    
+    return apiResponse;
+  }, [apiResponse])
 
   const [sheetOpen,       setSheetOpen      ] = useState(false)
   const [amountPaid,      setAmountPaid     ] = useState(0)
@@ -109,15 +128,13 @@ export function PaymentDetailPage() {
   return (
     <div className="space-y-4 pb-24">
 
-      {/* ── Back link ────────────────────────────────────────── */}
+      {/* ── Back link ── */}
       <Link to="/payments" className="inline-flex items-center gap-1.5 text-sm text-primary font-medium">
         <ArrowLeft className="h-4 w-4" /> All Payments
       </Link>
 
-      {/* ── Hero card — tenant + amount + status ─────────────── */}
+      {/* ── Hero card — tenant + amount + status ── */}
       <div className={`rounded-2xl border ${st.hero} p-5`}>
-
-        {/* Tenant name + status badge */}
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs text-textSecondary mb-1">Tenant</p>
@@ -134,10 +151,8 @@ export function PaymentDetailPage() {
           </Badge>
         </div>
 
-        {/* Divider */}
         <div className="my-4 border-t border-black/5" />
 
-        {/* Amount */}
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs text-textSecondary">Rent for {p.monthYear}</p>
@@ -164,17 +179,13 @@ export function PaymentDetailPage() {
         </div>
       </div>
 
-      {/* ── Details card ─────────────────────────────────────── */}
+      {/* ── Details card ── */}
       <div className="rounded-2xl border border-border bg-surface overflow-hidden">
         <div className="px-4 py-3 border-b border-border bg-background/50">
-          <p className="text-xs font-semibold text-textSecondary uppercase tracking-wider">
-            Details
-          </p>
+          <p className="text-xs font-semibold text-textSecondary uppercase tracking-wider">Details</p>
         </div>
 
         <div className="divide-y divide-border">
-
-          {/* Due date */}
           {p.dueDate && (
             <div className="flex items-center gap-3 px-4 py-3.5">
               <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
@@ -182,19 +193,13 @@ export function PaymentDetailPage() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-textSecondary">Due Date</p>
-                <p className="text-sm font-semibold text-textPrimary mt-0.5">
-                  {formatDate(p.dueDate)}
-                </p>
+                <p className="text-sm font-semibold text-textPrimary mt-0.5">{formatDate(p.dueDate)}</p>
               </div>
             </div>
           )}
 
-          {/* Tenant phone — tap to call */}
           {p.tenantPhone && (
-            <a
-              href={`tel:${p.tenantPhone}`}
-              className="flex items-center gap-3 px-4 py-3.5 hover:bg-background/60 transition-colors"
-            >
+            <a href={`tel:${p.tenantPhone}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-background/60 transition-colors">
               <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
                 <Phone className="h-3.5 w-3.5 text-textSecondary" />
               </div>
@@ -206,7 +211,6 @@ export function PaymentDetailPage() {
             </a>
           )}
 
-          {/* Room info */}
           {p.roomNumber && (
             <div className="flex items-center gap-3 px-4 py-3.5">
               <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
@@ -214,101 +218,38 @@ export function PaymentDetailPage() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-textSecondary">Room</p>
-                <p className="text-sm font-semibold text-textPrimary mt-0.5">
-                  Room {p.roomNumber}{p.bedLabel ? ` — Bed ${p.bedLabel}` : ''}
-                </p>
+                <p className="text-sm font-semibold text-textPrimary mt-0.5">Room {p.roomNumber}</p>
               </div>
             </div>
           )}
 
-          {/* Amount due */}
           <div className="flex items-center gap-3 px-4 py-3.5">
             <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
               <IndianRupee className="h-3.5 w-3.5 text-textSecondary" />
             </div>
             <div className="flex-1">
               <p className="text-xs text-textSecondary">Rent Amount</p>
-              <p className="text-sm font-semibold text-textPrimary mt-0.5">
-                {formatCurrency(p.amountDue)}
-              </p>
+              <p className="text-sm font-semibold text-textPrimary mt-0.5">{formatCurrency(p.amountDue)}</p>
             </div>
-            {(p.amountPaid ?? 0) > 0 && (
-              <div className="text-right">
-                <p className="text-xs text-textSecondary">Paid</p>
-                <p className="text-sm font-semibold text-success">
-                  {formatCurrency(p.amountPaid ?? 0)}
-                </p>
-              </div>
-            )}
           </div>
-
-          {/* Paid on date — only if paid */}
-          {p.paidAt && (
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <div className="h-8 w-8 rounded-lg bg-successLight flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-textSecondary">Payment Received On</p>
-                <p className="text-sm font-semibold text-textPrimary mt-0.5">
-                  {formatDate(p.paidAt)}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Payment mode — how they paid */}
-          {p.paymentMode && (
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
-                <Banknote className="h-3.5 w-3.5 text-textSecondary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-textSecondary">Paid Via</p>
-                <p className="text-sm font-semibold text-textPrimary mt-0.5">
-                  {p.paymentMode === 'BANK_TRANSFER' ? 'Bank Transfer' :
-                   p.paymentMode === 'UPI'           ? 'UPI'           :
-                   p.paymentMode === 'CHEQUE'        ? 'Cheque'        : 'Cash'}
-                </p>
-              </div>
-              {p.referenceNo && (
-                <div className="text-right max-w-[140px]">
-                  <p className="text-xs text-textSecondary">Ref</p>
-                  <p className="text-xs font-medium text-textPrimary truncate">{p.referenceNo}</p>
-                </div>
-              )}
-            </div>
-          )}
-
         </div>
       </div>
 
-      {/* ── Action buttons ───────────────────────────────────── */}
+      {/* ── Action buttons ── */}
       {canAct && (
         <div className="space-y-2">
           <Button className="w-full h-12 text-sm" onClick={openSheet}>
-            <IndianRupee className="h-4 w-4 mr-2" />
-            Record Payment
+            <IndianRupee className="h-4 w-4 mr-2" /> Record Payment
           </Button>
-          <Button
-            variant="outline"
-            className="w-full h-12 text-sm border-border text-textSecondary hover:border-danger hover:text-danger"
-            onClick={() => void onWaive()}
-          >
+          <Button variant="outline" className="w-full h-12 text-sm border-border text-textSecondary hover:border-danger hover:text-danger" onClick={() => void onWaive()}>
             Waive this rent
           </Button>
         </div>
       )}
 
-      {/* ── Mark paid bottom sheet ───────────────────────────── */}
-      <BottomSheet
-        open={sheetOpen}
-        onOpenChange={o => !o && setSheetOpen(false)}
-        title="Record Payment"
-      >
+      {/* ── Mark paid bottom sheet ── */}
+      <BottomSheet open={sheetOpen} onOpenChange={o => !o && setSheetOpen(false)} title="Record Payment">
         <div className="space-y-5 pt-2">
-
-          {/* Summary pill */}
           <div className="flex items-center justify-between rounded-xl bg-background px-4 py-3">
             <div>
               <p className="text-sm font-semibold text-textPrimary">{p.tenantName}</p>
@@ -320,30 +261,13 @@ export function PaymentDetailPage() {
             </div>
           </div>
 
-          {/* Amount */}
           <div>
-            <label className="block text-xs font-semibold text-textSecondary mb-2">
-              Amount Received (₹)
-            </label>
-            <Input
-              type="number"
-              value={amountPaid}
-              onChange={e => setAmountPaid(Number(e.target.value))}
-              className="text-lg font-bold h-12"
-            />
-            {amountPaid > 0 && amountPaid < (p.amountDue - (p.amountPaid ?? 0)) && (
-              <p className="text-xs text-warning mt-1.5 flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                Partial — {formatCurrency((p.amountDue - (p.amountPaid ?? 0)) - amountPaid)} will stay pending
-              </p>
-            )}
+            <label className="block text-xs font-semibold text-textSecondary mb-2">Amount Received (₹)</label>
+            <Input type="number" value={amountPaid} onChange={e => setAmountPaid(Number(e.target.value))} className="text-lg font-bold h-12" />
           </div>
 
-          {/* Payment mode */}
           <div>
-            <label className="block text-xs font-semibold text-textSecondary mb-2">
-              How did they pay?
-            </label>
+            <label className="block text-xs font-semibold text-textSecondary mb-2">How did they pay?</label>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { value: 'CASH',          label: '💵 Cash'          },
@@ -351,61 +275,30 @@ export function PaymentDetailPage() {
                 { value: 'BANK_TRANSFER', label: '🏦 Bank Transfer' },
                 { value: 'CHEQUE',        label: '📄 Cheque'        },
               ].map(m => (
-                <button
-                  key={m.value}
-                  type="button"
-                  onClick={() => setPaymentMode(m.value)}
-                  className={`rounded-xl border py-3 text-xs font-semibold transition-all ${
-                    paymentMode === m.value
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-surface text-textSecondary border-border hover:border-primary'
-                  }`}
-                >
+                <button key={m.value} type="button" onClick={() => setPaymentMode(m.value)} className={`rounded-xl border py-3 text-xs font-semibold transition-all ${paymentMode === m.value ? 'bg-primary text-white border-primary' : 'bg-surface text-textSecondary border-border hover:border-primary'}`}>
                   {m.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Reference — only for non-cash */}
           {['UPI', 'BANK_TRANSFER', 'CHEQUE'].includes(paymentMode) && (
             <div>
               <label className="block text-xs font-semibold text-textSecondary mb-2">
-                {paymentMode === 'UPI'           ? 'UPI Transaction ID (optional)' :
-                 paymentMode === 'CHEQUE'        ? 'Cheque Number (optional)'      :
-                 'Transaction Reference (optional)'}
+                {paymentMode === 'UPI' ? 'UPI Transaction ID (optional)' : paymentMode === 'CHEQUE' ? 'Cheque Number (optional)' : 'Transaction Reference (optional)'}
               </label>
-              <Input
-                value={referenceNumber}
-                onChange={e => setReferenceNumber(e.target.value)}
-                placeholder="Enter for your records"
-              />
+              <Input value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} placeholder="Enter for your records" />
             </div>
           )}
 
-          {/* Date */}
           <div>
-            <label className="block text-xs font-semibold text-textSecondary mb-2">
-              Date of Payment
-            </label>
-            <Input
-              type="date"
-              value={paidAt}
-              onChange={e => setPaidAt(e.target.value)}
-            />
+            <label className="block text-xs font-semibold text-textSecondary mb-2">Date of Payment</label>
+            <Input type="date" value={paidAt} onChange={e => setPaidAt(e.target.value)} />
           </div>
 
-          {/* Confirm button */}
-          <Button
-            className="w-full h-12"
-            disabled={markPaid.isPending || amountPaid <= 0}
-            onClick={() => void onMarkPaid()}
-          >
-            {markPaid.isPending
-              ? 'Saving…'
-              : `✓  Confirm ${formatCurrency(amountPaid)} Received`}
+          <Button className="w-full h-12" disabled={markPaid.isPending || amountPaid <= 0} onClick={() => void onMarkPaid()}>
+            {markPaid.isPending ? 'Saving…' : `✓  Confirm ${formatCurrency(amountPaid)} Received`}
           </Button>
-
         </div>
       </BottomSheet>
     </div>

@@ -333,6 +333,7 @@ export function PaymentListPage() {
       ) : (
         <div className="space-y-2">
           {rows.map(p => {
+            console.log("Payment Item Data:", p);
             const statusLabel  = getStatusLabel(p)
             const statusColor  = getStatusColor(p)
             const statusIcon   = getStatusIcon(p)
@@ -351,6 +352,7 @@ export function PaymentListPage() {
               >
                 <div className="flex items-start justify-between p-4 pb-3">
                   <div className="flex-1 min-w-0">
+                   
                     <Link
                       to={`/payments/${p.id}`}
                       className="text-sm font-semibold text-textPrimary hover:text-primary truncate block"
