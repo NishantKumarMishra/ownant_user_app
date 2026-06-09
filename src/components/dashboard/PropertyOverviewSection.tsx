@@ -37,7 +37,7 @@ export function PropertyOverviewSection() {
   return (
     <section className="-mx-4 bg-white py-5 border-y border-gray-100">
 
-      {/* Header */}
+      {/* ── 1. Header Block ── */}
       <div className="flex items-center justify-between px-4 mb-4">
         <div>
           <h2 className="text-sm font-black text-gray-900">Property Overview 🏡</h2>
@@ -53,7 +53,42 @@ export function PropertyOverviewSection() {
         </Link>
       </div>
 
-      {/* Scroll dots */}
+      {/* ── 2. Summary Stats Card Grid (🟢 Shifted to top view as requested) ── */}
+      {overview && properties.length > 1 && (
+        <div className="grid grid-cols-3 gap-2 px-4 mb-5">
+          {[
+            {
+              label: 'Total Beds',
+              value: overview.totalBeds,
+              color: '#6366f1',
+            },
+            {
+              label: 'Tenants',
+              value: overview.totalActiveTenants,
+              color: '#0ea5e9',
+            },
+            {
+              label: 'Pending',
+              // 🟢 Fixed decimal formatting logic perfectly to output accurate K figures
+              value: overview.totalPendingDues >= 1000
+                ? `₹${(overview.totalPendingDues / 1000).toFixed(1).replace(/\.0$/, '')}K`
+                : `₹${overview.totalPendingDues}`,
+              color: '#ef4444',
+            },
+          ].map((s, i) => (
+            <div key={i}
+              className="rounded-2xl bg-gray-50 border border-gray-100 p-3 text-center"
+              style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+              <p className="text-base font-black" style={{ color: s.color }}>
+                {s.value}
+              </p>
+              <p className="text-[10px] font-bold text-gray-400 mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── 3. Scroll Indicator dots ── */}
       {properties.length > 1 && (
         <div className="flex justify-center gap-1.5 mb-3">
           {properties.map((_, i) => (
@@ -68,7 +103,7 @@ export function PropertyOverviewSection() {
         </div>
       )}
 
-      {/* Cards — snap scroll */}
+      {/* ── 4. Property Cards Carousel — Snap Scroll ── */}
       <div
         ref={scrollRef}
         onScrollEnd={handleScroll}
@@ -98,40 +133,6 @@ export function PropertyOverviewSection() {
           </div>
         ))}
       </div>
-
-      {/* Summary stats */}
-      {overview && properties.length > 1 && (
-        <div className="grid grid-cols-3 gap-2 px-4 mt-4">
-          {[
-            {
-              label: 'Total Beds',
-              value: overview.totalBeds,
-              color: '#6366f1',
-            },
-            {
-              label: 'Tenants',
-              value: overview.totalActiveTenants,
-              color: '#0ea5e9',
-            },
-            {
-              label: 'Pending',
-              value: overview.totalPendingDues >= 1000
-                ? `₹${(overview.totalPendingDues / 1000).toFixed(0)}K`
-                : `₹${overview.totalPendingDues}`,
-              color: '#ef4444',
-            },
-          ].map((s, i) => (
-            <div key={i}
-              className="rounded-2xl bg-gray-50 border border-gray-100 p-3 text-center"
-              style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              <p className="text-base font-black" style={{ color: s.color }}>
-                {s.value}
-              </p>
-              <p className="text-[10px] font-bold text-gray-400 mt-0.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      )}
 
     </section>
   )

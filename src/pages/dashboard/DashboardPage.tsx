@@ -20,6 +20,7 @@ import type { ActivityFeedItem } from "@/api/types";
 import { PendingCheckins } from "@/components/checkin/PendingCheckins";
 import { DashboardFooter } from "@/components/dashboard/DashboardFooter";
 import { ChevronRight } from "lucide-react";
+import { useNavigate } from 'react-router-dom'
 
 // ── Helpers ───────────────────────────────────────────────────
 function getInitials(name: string) {
@@ -236,6 +237,7 @@ export function DashboardPage() {
   const { data, isLoading, isError, refetch } = useDashboard();
   const [bulkOpen, setBulkOpen] = useState(false);
   const [showAllActivity, setShowAllActivity] = useState(false);
+  const navigate = useNavigate()
 
   const bulk      = useGenerateBulkPayments();
   const reminders = useTriggerReminders();
@@ -303,33 +305,63 @@ export function DashboardPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <MetricCard
-            label="Collection"
-            value={`${Math.round(collectionRate)}%`}
-            hint="of expected rent"
-            icon={<Icon3D.collection />}
-          />
-          <MetricCard
-            label="Occupancy"
-            value={`${occupiedBeds}/${totalBeds}`}
-            hint={`${totalBeds - occupiedBeds} beds free`}
-            icon={<Icon3D.beds />}
-          />
-          <MetricCard
-            label="Overdue"
-            value={String(overdue)}
-            hint={overdue > 0 ? "Need attention" : "All clear ✓"}
-            icon={<Icon3D.overdue />}
-            danger={overdue > 0}
-          />
-          <MetricCard
-            label="Revenue"
-            value={fmtINR(revenue)}
-            hint={`of ${fmtINR(expectedRev)}`}
-            icon={<Icon3D.revenue />}
-          />
-        </div>
+       {/* ── Metric Cards Grid Layour — Dynamic Routing Triggers ── */}
+<div className="grid grid-cols-2 gap-3">
+  
+  {/* 1. Collection Card — Redirects to All Payments list */}
+  <div 
+    onClick={() => navigate('/payments')} 
+    className="cursor-pointer transition-transform duration-150 active:scale-95"
+  >
+    <MetricCard
+      label="Collection"
+      value={`${Math.round(collectionRate)}%`}
+      hint="of expected rent"
+      icon={<Icon3D.collection />}
+    />
+  </div>
+
+  {/* 2. Occupancy Card — Redirects to Rooms list console */}
+  <div 
+    onClick={() => navigate('/rooms')} 
+    className="cursor-pointer transition-transform duration-150 active:scale-95"
+  >
+    <MetricCard
+      label="Occupancy"
+      value={`${occupiedBeds}/${totalBeds}`}
+      hint={`${totalBeds - occupiedBeds} beds free`}
+      icon={<Icon3D.beds />}
+    />
+  </div>
+
+  {/* 3. Overdue Card — Redirects to Payments with overdue parameter filter */}
+  <div 
+    onClick={() => navigate('/payments?status=overdue')} 
+    className="cursor-pointer transition-transform duration-150 active:scale-95"
+  >
+    <MetricCard
+      label="Overdue"
+      value={String(overdue)}
+      hint={overdue > 0 ? "Need attention" : "All clear ✓"}
+      icon={<Icon3D.overdue />}
+      danger={overdue > 0}
+    />
+  </div>
+
+  {/* 4. Revenue Card — Redirects to Analytics or Payments */}
+  <div 
+    onClick={() => navigate('/payments')} 
+    className="cursor-pointer transition-transform duration-150 active:scale-95"
+  >
+    <MetricCard
+      label="Revenue"
+      value={fmtINR(revenue)}
+      hint={`of ${fmtINR(expectedRev)}`}
+      icon={<Icon3D.revenue />}
+    />
+  </div>
+
+</div>
       </section>
 
       {/* ── Fast Collections ─────────────────────────────── */}

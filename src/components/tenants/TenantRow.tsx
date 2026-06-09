@@ -1,153 +1,33 @@
 import { useState } from 'react'
-import { Phone, MessageCircle, LogOut } from 'lucide-react'
+import { Phone, MessageCircle, LogOut, ShieldCheck, AlertCircle,  BellRing } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { TenantListItem } from '@/api/types'
-import { useVacateTenant } from '@/hooks/useTenants'
+import { useSendReminder } from '@/hooks/useNotifications' // 🟢 Imported reminder mutation trigger
 import { cn } from '@/lib/utils'
-import { differenceInDays, parseISO, format } from 'date-fns'
+import { differenceInDays, parseISO, format, startOfDay } from 'date-fns'
 import toast from 'react-hot-toast'
 import { handleApiError } from '@/lib/apiError'
 
-// ── Helpers ───────────────────────────────────────────────────
 function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 }
 
-const AVATAR_COLORS = [
-  { bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  { bg: 'bg-blue-100',    text: 'text-blue-700'    },
-  { bg: 'bg-violet-100',  text: 'text-violet-700'  },
-  { bg: 'bg-amber-100',   text: 'text-amber-700'   },
-  { bg: 'bg-rose-100',    text: 'text-rose-700'    },
-  { bg: 'bg-cyan-100',    text: 'text-cyan-700'    },
+const THEMES = [
+  { bg: 'from-emerald-500 to-teal-600', text: 'text-white' },
+  { bg: 'from-blue-500 to-indigo-600', text: 'text-white' },
+  { bg: 'from-purple-500 to-violet-600', text: 'text-white' },
+  { bg: 'from-amber-500 to-orange-600', text: 'text-white' },
+  { bg: 'from-rose-500 to-pink-600', text: 'text-white' },
 ]
 
-function avatarColor(name: string) {
-  return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
-}
-
-// ── Payment status badge ──────────────────────────────────────
-type PaymentStatus = 'PAID' | 'DUE_SOON' | 'OVERDUE' | 'PENDING' | null
-
-function PaymentBadge({ status }: { status: PaymentStatus }) {
-  if (!status) return null
-  if (status === 'PAID')     return <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success">Paid</span>
-  if (status === 'DUE_SOON') return <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-600">Due Soon</span>
-  if (status === 'OVERDUE')  return <span className="inline-flex items-center rounded-full bg-danger/10 px-2.5 py-0.5 text-xs font-semibold text-danger">Overdue</span>
-  return <span className="inline-flex items-center rounded-full bg-surface border border-border px-2.5 py-0.5 text-xs font-semibold text-textSecondary">Pending</span>
-}
-
-// ── Days remaining badge for notice tenants ───────────────────
-function DaysRemainingBadge({ moveOutDate }: { moveOutDate: string }) {
-  const days = differenceInDays(parseISO(moveOutDate), new Date())
-
-  if (days < 0) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-danger/10 px-2.5 py-0.5 text-xs font-semibold text-danger">
-        Overdue by {Math.abs(days)}d
-      </span>
-    )
-  }
-  if (days === 0) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-danger/10 px-2.5 py-0.5 text-xs font-semibold text-danger">
-        Vacating today
-      </span>
-    )
-  }
-  if (days <= 3) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-600">
-        {days}d left
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-600">
-      {days}d left
-    </span>
-  )
-}
-
-// ── Vacate confirm modal ──────────────────────────────────────
-function VacateModal({
-  tenant,
-  onClose,
-}: {
-  tenant: TenantListItem
-  onClose: () => void
-}) {
-  const vacate = useVacateTenant()
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-
-  const handleVacate = async () => {
-    try {
-      await vacate.mutateAsync({ id: tenant.id, moveOutDate: date })
-      toast.success(`${tenant.name} vacated successfully`)
-      onClose()
-    } catch (e) {
-      handleApiError(e)
-    }
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-lg rounded-t-3xl border-t border-border bg-surface p-6 pb-10"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="mb-1 h-1 w-10 rounded-full bg-border mx-auto" />
-        <h3 className="mt-4 text-base font-bold text-textPrimary">
-          Vacate {tenant.name}?
-        </h3>
-        <p className="mt-1 text-sm text-textSecondary">
-          This will free the bed and mark the tenant as vacated.
-        </p>
-
-        <div className="mt-5">
-          <label className="text-xs font-semibold text-textSecondary uppercase tracking-wide">
-            Move-out date
-          </label>
-          <input
-            type="date"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-            className="mt-2 h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-textPrimary outline-none focus:border-primary"
-          />
-        </div>
-
-        <div className="mt-4 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-border py-3 text-sm font-medium text-textSecondary hover:bg-surface transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleVacate}
-            disabled={vacate.isPending}
-            className="flex-1 rounded-xl bg-danger py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-60"
-          >
-            {vacate.isPending ? 'Vacating…' : 'Confirm Vacate'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Main Component ────────────────────────────────────────────
 export function TenantRow({ tenant }: { tenant: TenantListItem }) {
-  const color = avatarColor(tenant.name)
   const [showVacateModal, setShowVacateModal] = useState(false)
+  const theme = THEMES[tenant.name.charCodeAt(0) % THEMES.length]
+  const sendReminderMutation = useSendReminder() // 🟢 Initialized
 
   const isNotice  = tenant.status === 'NOTICE'
   const isVacated = tenant.status === 'VACATED'
 
-  // Room + bed info
   const roomNumber = tenant.bed?.roomNumber ?? tenant.roomNumber
   const bedLabel   = tenant.bed?.bedLabel   ?? tenant.bedLabel
   const moveOutDate = (tenant as any).moveOutDate as string | undefined
@@ -157,131 +37,161 @@ export function TenantRow({ tenant }: { tenant: TenantListItem }) {
     bedLabel   ? `Bed ${bedLabel}`   : null,
   ].filter(Boolean).join(' • ')
 
-  // Payment status
-  const paymentStatus: PaymentStatus = (() => {
-    const cp = (tenant as any).currentPaymentStatus
-                ?? tenant.currentMonthPayment?.status
+  // 🟢 Unified Unified Payment Parsing Engine (Mirrored with List page calculation)
+  const paymentStatus = (() => {
+    const cp = (tenant as any).currentPaymentStatus ?? tenant.currentMonthPayment?.status
     if (!cp) return null
     if (cp === 'PAID' || cp === 'WAIVED') return 'PAID'
-    const dueDate = tenant.currentMonthPayment?.dueDate
-    if ((cp === 'PENDING' || cp === 'PARTIAL') && dueDate) {
-      const days = Math.ceil((new Date(dueDate).getTime() - Date.now()) / 86_400_000)
-      if (days < 0)  return 'OVERDUE'
-      if (days <= 2) return 'DUE_SOON'
+    
+    const dueDateStr = tenant.currentMonthPayment?.dueDate
+    if ((cp === 'PENDING' || cp === 'PARTIAL') && dueDateStr) {
+      const today = startOfDay(new Date())
+      const due = startOfDay(parseISO(dueDateStr))
+      
+      if (due < today) return 'OVERDUE'
+      const daysLeft = differenceInDays(due, today)
+      if (daysLeft >= 0 && daysLeft <= 2) return 'DUE_SOON'
     }
     return 'PENDING'
   })()
 
   const daysOverdue = (() => {
-    const dueDate = tenant.currentMonthPayment?.dueDate
-    if (!dueDate) return null
-    const days = Math.ceil((Date.now() - new Date(dueDate).getTime()) / 86_400_000)
-    return days > 0 && paymentStatus === 'OVERDUE' ? days : null
+    const dueDateStr = tenant.currentMonthPayment?.dueDate
+    if (!dueDateStr || paymentStatus !== 'OVERDUE') return null
+    return differenceInDays(startOfDay(new Date()), startOfDay(parseISO(dueDateStr)))
   })()
+
+  // 🟢 Visibility flag logic rule
+  const canSendReminder = paymentStatus === 'OVERDUE' || paymentStatus === 'DUE_SOON'
+
+  const handleReminderDispatch = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await sendReminderMutation.mutateAsync(tenant.id)
+      toast.success('WhatsApp Rent Reminder dispatched successfully!')
+    } catch (err) {
+      handleApiError(err)
+    }
+  }
 
   return (
     <>
       <div className={cn(
-        'flex items-center gap-3 rounded-2xl border bg-surface px-3 py-3.5 mx-4',
-        isNotice ? 'border-amber-200 bg-amber-50/30' : 'border-border',
-        isVacated && 'opacity-60',
+        "relative flex flex-col justify-between gap-3 rounded-2xl border bg-surface py-3 px-2.5 mx-2 mb-2.5 transition-all duration-200 border-border/70 shadow-sm",
+        isNotice && "border-amber-200 bg-amber-50/20",
+        isVacated && "opacity-50 bg-background/50 shadow-none"
       )}>
+        
+        {/* Core Info Profile Node */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <Link to={`/tenants/${tenant.id}`} className="shrink-0">
+              <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center text-xs font-black tracking-wider bg-gradient-to-br shadow-sm", theme.bg, theme.text)}>
+                {initials(tenant.name)}
+              </div>
+            </Link>
 
-        {/* Avatar */}
-        <Link to={`/tenants/${tenant.id}`} className="flex-shrink-0">
-          <div className={cn(
-            'h-11 w-11 rounded-2xl flex items-center justify-center text-sm font-bold',
-            color.bg, color.text,
-          )}>
-            {initials(tenant.name)}
+            <div className="min-w-0 flex-1">
+              <Link to={`/tenants/${tenant.id}`}>
+                <h4 className="text-sm font-bold tracking-tight text-textPrimary hover:text-primary transition-colors truncate">
+                  {tenant.name}
+                </h4>
+              </Link>
+              <div className="flex flex-col gap-0.5 mt-1">
+                <p className="text-xs font-semibold text-textSecondary truncate">{roomLine || 'No Room Configured'}</p>
+                
+                {isNotice && moveOutDate && (
+                  <p className="text-[11px] font-bold text-amber-700 flex items-center gap-1 mt-0.5 truncate">
+                    Out: {format(parseISO(moveOutDate), 'dd MMM yyyy')}
+                  </p>
+                )}
+                
+                {daysOverdue && daysOverdue > 0 && (
+                  <span className="text-[11px] font-black text-danger flex items-center gap-0.5 mt-0.5">
+                    ⚠️ {daysOverdue} days overdue
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-        </Link>
 
-        {/* Info */}
-        {/* <Link to={`/tenants/${tenant.id}`} className="flex-1 min-w-0"> */}
-        <Link
-  to={`/tenants/${tenant.id}`}
-  className="flex-1 min-w-0 overflow-hidden"
->
-          <p className="text-sm font-semibold text-textPrimary truncate">{tenant.name}</p>
-
-          {/* Notice tenants — show move-out date + days remaining */}
-          {isNotice && moveOutDate ? (
-            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              <p className="text-xs text-textSecondary">
-                {roomLine || '—'} · Out {format(parseISO(moveOutDate), 'dd MMM')}
-              </p>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-              <p className="text-xs text-textSecondary">{roomLine || '—'}</p>
-              {daysOverdue && (
-                <>
-                  <span className="text-xs text-textSecondary">•</span>
-                  <span className="text-xs font-semibold text-danger">{daysOverdue}d overdue</span>
-                </>
-              )}
-            </div>
-          )}
-        </Link>
-
-        {/* Right side */}
-        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-          {/* Notice — days remaining badge */}
-          {isNotice && moveOutDate ? (
-            <DaysRemainingBadge moveOutDate={moveOutDate} />
-          ) : (
-            <>
-              {tenant.monthlyRent != null && (
-                <span className="text-sm font-bold text-textPrimary">
-                  ₹{tenant.monthlyRent.toLocaleString('en-IN')}
-                </span>
-              )}
-              <PaymentBadge status={paymentStatus} />
-            </>
-          )}
+          {/* Price Console pane */}
+          <div className="flex flex-col items-end gap-1 shrink-0 text-right">
+            {tenant.monthlyRent != null && (
+              <span className="text-sm font-black tracking-tight text-textPrimary">
+                ₹{tenant.monthlyRent.toLocaleString('en-IN')}
+              </span>
+            )}
+            
+            {/* Payment Badge Renderer */}
+            {paymentStatus === 'PAID' && (
+              <span className="inline-flex items-center gap-0.5 rounded-lg bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success border border-success/10">
+                <ShieldCheck className="h-3 w-3 stroke-[2.5]" /> Paid
+              </span>
+            )}
+            {paymentStatus === 'OVERDUE' && (
+              <span className="inline-flex items-center gap-0.5 rounded-lg bg-danger/10 px-2 py-0.5 text-[10px] font-bold text-danger border border-danger/10 animate-pulse">
+                <AlertCircle className="h-3 w-3 stroke-[2.5]" /> Overdue
+              </span>
+            )}
+            {paymentStatus === 'DUE_SOON' && (
+              <span className="inline-flex items-center gap-0.5 rounded-lg bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600 border border-amber-200/40">
+                Due Soon
+              </span>
+            )}
+            {paymentStatus === 'PENDING' && (
+              <span className="inline-flex items-center rounded-lg bg-background border border-border/80 px-2 py-0.5 text-[10px] font-bold text-textSecondary">
+                Pending
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0 ml-1">
-          {tenant.phone && (
-            <a
-              href={`tel:${tenant.phone}`}
-              onClick={e => e.stopPropagation()}
-              className="h-8 w-8 rounded-xl bg-surface border border-border flex items-center justify-center hover:border-primary/30 transition-colors"
-            >
-              <Phone className="h-3.5 w-3.5 text-textSecondary" />
-            </a>
-          )}
+        <div className="w-full border-t border-gray-100/80 my-0.5" />
 
-          {/* Notice tenants — show vacate button instead of WhatsApp */}
-          {isNotice ? (
-            <button
-              onClick={e => { e.stopPropagation(); setShowVacateModal(true) }}
-              className="h-8 w-8 rounded-xl bg-danger/10 flex items-center justify-center hover:bg-danger/20 transition-colors"
-            >
-              <LogOut className="h-3.5 w-3.5 text-danger" />
-            </button>
-          ) : (
-            tenant.phone && (
-              <a
-                href={`https://wa.me/91${tenant.phone}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="h-8 w-8 rounded-xl bg-successLight flex items-center justify-center hover:opacity-80 transition-opacity"
+        {/* Dynamic Context Action Desk Section */}
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          <div>
+            {/* 🟢 Render contextual reminder trigger button */}
+            {canSendReminder ? (
+              <button
+                onClick={handleReminderDispatch}
+                disabled={sendReminderMutation.isPending}
+                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider transition active:scale-95 disabled:opacity-50 shadow-sm"
               >
-                <MessageCircle className="h-3.5 w-3.5 text-success" />
-              </a>
-            )
-          )}
-        </div>
-      </div>
+                <BellRing className="h-3 w-3 stroke-[2.5] animate-bounce" /> 
+                {sendReminderMutation.isPending ? 'Sending...' : 'Rent Reminder'}
+              </button>
+            ) : (
+              <p className="text-[11px] font-semibold text-textSecondary italic">
+                Account Status Active ✓
+              </p>
+            )}
+          </div>
 
-      {/* Vacate modal */}
-      {showVacateModal && (
-        <VacateModal tenant={tenant} onClose={() => setShowVacateModal(false)} />
-      )}
+          <div className="flex items-center gap-1.5">
+            {tenant.phone && (
+              <a href={`tel:${tenant.phone}`} className="inline-flex items-center justify-center gap-1 px-3 h-8 rounded-xl bg-background border border-border/70 text-xs font-bold text-textSecondary transition active:bg-gray-50">
+                <Phone className="h-3.5 w-3.5" /> Call
+              </a>
+            )}
+
+            {isNotice ? (
+              <button onClick={() => setShowVacateModal(true)} className="inline-flex items-center justify-center gap-1 px-3 h-8 rounded-xl bg-danger/10 border border-danger/10 text-xs font-bold text-danger transition active:bg-danger/20">
+                <LogOut className="h-3.5 w-3.5" /> Release Bed
+              </button>
+            ) : (
+              tenant.phone && (
+                <a href={`https://wa.me/91${tenant.phone}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1 px-3 h-8 rounded-xl bg-success/10 border border-success/10 text-xs font-bold text-success transition active:opacity-80">
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                </a>
+              )
+            )}
+          </div>
+        </div>
+
+      </div>
     </>
   )
 }
