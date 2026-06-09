@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Phone, MessageCircle, LogOut, ShieldCheck, AlertCircle,  BellRing } from 'lucide-react'
+import { Phone, MessageCircle, LogOut, ShieldCheck, AlertCircle, BellRing } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { TenantListItem } from '@/api/types'
-import { useSendReminder } from '@/hooks/useNotifications' // 🟢 Imported reminder mutation trigger
+import { useVacateTenant } from '@/hooks/useTenants' // 🟢 Imported vacate mutation hook
+import { useSendReminder } from '@/hooks/useNotifications'
 import { cn } from '@/lib/utils'
 import { differenceInDays, parseISO, format, startOfDay } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -20,10 +21,45 @@ const THEMES = [
   { bg: 'from-rose-500 to-pink-600', text: 'text-white' },
 ]
 
+// ── Internal Modular Vacate Modal (Re-injected to read showVacateModal) ──
+function VacateModal({ tenant, onClose }: { tenant: TenantListItem; onClose: () => void }) {
+  const vacate = useVacateTenant()
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  
+  const handleVacate = async () => {
+    try {
+      await vacate.mutateAsync({ id: tenant.id, moveOutDate: date })
+      toast.success(`${tenant.name} vacated successfully`)
+      onClose()
+    } catch (e) {
+      handleApiError(e)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-t-3xl border-t border-border bg-surface p-5 pb-10 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="mb-2 h-1.5 w-12 rounded-full bg-border/80 mx-auto" />
+        <h3 className="mt-4 text-base font-black tracking-tight text-textPrimary">Vacate {tenant.name}?</h3>
+        <p className="mt-1 text-xs text-textSecondary">Releases the allocated bed configuration mapping automatically.</p>
+        <div className="mt-5">
+          <label className="text-[10px] font-bold text-textSecondary uppercase tracking-widest">Move-out date</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-2 h-12 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-textPrimary outline-none focus:border-primary" />
+        </div>
+        <div className="mt-5 flex gap-3">
+          <button onClick={onClose} className="flex-1 h-11 rounded-xl border border-border text-xs font-bold text-textSecondary bg-surface active:bg-gray-50">Cancel</button>
+          <button onClick={handleVacate} disabled={vacate.isPending} className="flex-1 h-11 rounded-xl bg-danger text-xs font-bold text-white shadow-sm shadow-danger/20 disabled:opacity-50">{vacate.isPending ? 'Processing…' : 'Confirm & Release'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main Component ────────────────────────────────────────────
 export function TenantRow({ tenant }: { tenant: TenantListItem }) {
-  const [showVacateModal, setShowVacateModal] = useState(false)
+  const [showVacateModal, setShowVacateModal] = useState(false) // 🟢 Variable is read now below!
   const theme = THEMES[tenant.name.charCodeAt(0) % THEMES.length]
-  const sendReminderMutation = useSendReminder() // 🟢 Initialized
+  const sendReminderMutation = useSendReminder()
 
   const isNotice  = tenant.status === 'NOTICE'
   const isVacated = tenant.status === 'VACATED'
@@ -37,7 +73,6 @@ export function TenantRow({ tenant }: { tenant: TenantListItem }) {
     bedLabel   ? `Bed ${bedLabel}`   : null,
   ].filter(Boolean).join(' • ')
 
-  // 🟢 Unified Unified Payment Parsing Engine (Mirrored with List page calculation)
   const paymentStatus = (() => {
     const cp = (tenant as any).currentPaymentStatus ?? tenant.currentMonthPayment?.status
     if (!cp) return null
@@ -61,7 +96,6 @@ export function TenantRow({ tenant }: { tenant: TenantListItem }) {
     return differenceInDays(startOfDay(new Date()), startOfDay(parseISO(dueDateStr)))
   })()
 
-  // 🟢 Visibility flag logic rule
   const canSendReminder = paymentStatus === 'OVERDUE' || paymentStatus === 'DUE_SOON'
 
   const handleReminderDispatch = async (e: React.MouseEvent) => {
@@ -153,7 +187,7 @@ export function TenantRow({ tenant }: { tenant: TenantListItem }) {
         {/* Dynamic Context Action Desk Section */}
         <div className="flex items-center justify-between gap-2 pt-0.5">
           <div>
-            {/* 🟢 Render contextual reminder trigger button */}
+            {/* Render contextual reminder trigger button */}
             {canSendReminder ? (
               <button
                 onClick={handleReminderDispatch}
@@ -178,7 +212,10 @@ export function TenantRow({ tenant }: { tenant: TenantListItem }) {
             )}
 
             {isNotice ? (
-              <button onClick={() => setShowVacateModal(true)} className="inline-flex items-center justify-center gap-1 px-3 h-8 rounded-xl bg-danger/10 border border-danger/10 text-xs font-bold text-danger transition active:bg-danger/20">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setShowVacateModal(true); }} // 🟢 Triggers state change cleanly
+                className="inline-flex items-center justify-center gap-1 px-3 h-8 rounded-xl bg-danger/10 border border-danger/10 text-xs font-bold text-danger transition active:bg-danger/20"
+              >
                 <LogOut className="h-3.5 w-3.5" /> Release Bed
               </button>
             ) : (
@@ -192,6 +229,11 @@ export function TenantRow({ tenant }: { tenant: TenantListItem }) {
         </div>
 
       </div>
+
+      {/* 🟢 Render modal dynamically based on state */}
+      {showVacateModal && (
+        <VacateModal tenant={tenant} onClose={() => setShowVacateModal(false)} />
+      )}
     </>
   )
 }
